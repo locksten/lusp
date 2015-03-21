@@ -2,6 +2,7 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
 import Control.Applicative ((<$>))
+import Text.Parsec.Combinator
 
 data LispVal = Atom String
              | List [LispVal]
@@ -21,10 +22,7 @@ parseExpr = parseAtom
          <|> parseString
          <|> parseNumber
          <|> parseQuoted
-         <|> do char '('
-                x <- try parseList <|> parseDottedList
-                char ')'
-                return x
+         <|> parseListOrDottedList
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -52,10 +50,7 @@ parseNumber = Number . read <$> many1 digit
 
 parseString :: Parser LispVal
 parseString = do
-    _ <- char '"'
-    ret <- many chars
-    _ <- char '"'
-    return $ String ret
+    String <$> between (char '"') (char '"') (many chars)
       where chars = escaped <|> noneOf "\""
             escaped = char '\\' >> choice (zipWith escChar characters replacements)
             escChar character replacement = char character >> return replacement
@@ -71,8 +66,11 @@ parseDottedList = do
         tail' <- char '.' >> spaces >> parseExpr
         return $ DottedList head' tail'
 
+-- parseListOrDottedList :: Parser LispVal
+-- parseListOrDottedList = do
+
 parseQuoted :: Parser LispVal
 parseQuoted = do
-        char '\''
+        _ <- char '\''
         x <- parseExpr
         return $ List [Atom "quote", x]

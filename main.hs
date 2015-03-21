@@ -1,6 +1,7 @@
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
+import Control.Applicative ((<$>))
 
 data LispVal = Atom String
              | List [LispVal]
@@ -8,11 +9,17 @@ data LispVal = Atom String
              | Number Integer
              | String String
              | Bool Bool
+             deriving (Show)
 
 main :: IO ()
 main = do
     args <- getArgs
     unless (length args < 1) $ putStrLn $ readExpr $ head args
+
+parseExpr :: Parser LispVal
+parseExpr = parseAtom
+         <|> parseString
+         <|> parseNumber
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -23,7 +30,7 @@ spaces = skipMany1 space
 readExpr :: String -> String
 readExpr input = case parse parseExpr "readExprRoot" input of
     Left err -> "No match: " ++ show err
-    Right _ -> "Found value"
+    Right val -> show val
 
 parseAtom :: Parser LispVal
 parseAtom = do
@@ -36,16 +43,16 @@ parseAtom = do
                _    -> Atom atom
 
 parseNumber :: Parser LispVal
-parseNumber = liftM (Number . read) $ many1 digit
-
-parseExpr :: Parser LispVal
-parseExpr = parseAtom
-         <|> parseString
-         <|> parseNumber
+parseNumber = Number . read <$> many1 digit
 
 parseString :: Parser LispVal
 parseString = do
     _ <- char '"'
-    x <- many (noneOf "\"")
+    ret <- many chars
     _ <- char '"'
-    return $ String x
+    return $ String ret
+      where chars = escaped <|> noneOf "\""
+            escaped = char '\\' >> choice (zipWith escChar characters replacements)
+            escChar character replacement = char character >> return replacement
+            characters   = ['b',  'n',  'f',  'r',  't',  '\\', '\"', '/']
+            replacements = ['\b', '\n', '\f', '\r', '\t', '\\', '\"', '/']

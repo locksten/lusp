@@ -13,9 +13,7 @@ data LispVal = Atom String
              deriving (Show)
 
 main :: IO ()
-main = do
-    args <- getArgs
-    unless (length args < 1) $ putStrLn $ readExpr $ head args
+main = getArgs >>= (\args -> unless (length args < 1) $ putStrLn $ readExpr $ head args)
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
@@ -24,16 +22,17 @@ parseExpr = parseAtom
          <|> parseQuoted
          <|> parseListOrDottedList
 
-symbol :: Parser Char
-symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
-
-spaces :: Parser ()
-spaces = skipMany1 space
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "readExprRoot" input of
     Left err -> "No match: " ++ show err
     Right val -> show val
+
+symbol :: Parser Char
+symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
+
+spaces :: Parser ()
+spaces = skipMany1 space
 
 parseAtom :: Parser LispVal
 parseAtom = do
@@ -57,20 +56,23 @@ parseString = do
             characters   = ['b',  'n',  'f',  'r',  't',  '\\', '\"', '/']
             replacements = ['\b', '\n', '\f', '\r', '\t', '\\', '\"', '/']
 
-parseList :: Parser LispVal
-parseList = List <$> sepBy parseExpr spaces
+parseList :: Parser [LispVal]
+parseList = sepEndBy parseExpr spaces
 
-parseDottedList :: Parser LispVal
-parseDottedList = do
-        head' <- endBy parseExpr spaces
-        tail' <- char '.' >> spaces >> parseExpr
-        return $ DottedList head' tail'
+parseDottedList :: Parser (Maybe LispVal)
+parseDottedList = optionMaybe (char '.' >> spaces >> parseExpr)
 
--- parseListOrDottedList :: Parser LispVal
--- parseListOrDottedList = do
+parseListOrDottedList :: Parser LispVal
+parseListOrDottedList = do
+    _ <- char '('
+    list <- parseList
+    end <- parseDottedList
+    _ <- char ')'
+    return $ case end of
+      Nothing -> List list
+      Just x -> DottedList list x
 
 parseQuoted :: Parser LispVal
-parseQuoted = do
-        _ <- char '\''
-        x <- parseExpr
-        return $ List [Atom "quote", x]
+parseQuoted = char '\'' >>
+              parseExpr >>= \ x ->
+              return $ List [Atom "quote", x]

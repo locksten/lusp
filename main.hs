@@ -12,7 +12,28 @@ data LispVal = Atom String
              deriving (Show)
 
 main :: IO ()
-main = getArgs >>= (\args -> unless (length args < 1) $ putStrLn $ readExpr $ head args)
+main = getArgs >>= (\args -> unless (length args < 1) $ putStrLn $
+       readExpr $ head args)
+
+prettyPrintIndentLevel :: Int
+prettyPrintIndentLevel = 4
+
+prettyPrintList :: (LispVal, Int) -> String
+prettyPrintList (xs, depth) = case xs of
+    (List xs) -> indent depth ++ "( " ++ concatMap iteration xs ++ ") "
+      where iteration xs = prettyPrintList (xs, depth + 1)
+            indent depth = if depth == 0 then "" else "\n" ++ (concat $
+                           replicate (depth * prettyPrintIndentLevel) " ")
+    _         -> prettyPrint xs
+
+prettyPrint :: LispVal -> String
+prettyPrint (List xs) = prettyPrintList (List xs, 0)
+prettyPrint (DottedList xs end) = "( " ++ concatMap prettyPrint xs ++ ". " ++
+                                  prettyPrint end ++ ") "
+prettyPrint (Atom x) = "'" ++ (init $ tail $ show x) ++ "' "
+prettyPrint (Number x) = show x
+prettyPrint (String x) = show x
+prettyPrint (Bool x) = if x then "#t " else "#f "
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
@@ -21,11 +42,10 @@ parseExpr = parseAtom
          <|> parseQuoted
          <|> parseListOrDottedList
 
-
 readExpr :: String -> String
 readExpr input = case parse (sepBy parseExpr space) "readExprRoot" input of
     Left err -> "No match: " ++ show err
-    Right val -> show val
+    Right val -> unlines (map prettyPrint val)
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"

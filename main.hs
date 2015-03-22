@@ -2,7 +2,6 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
 import Control.Applicative ((<$>))
-import Text.Parsec.Combinator
 
 data LispVal = Atom String
              | List [LispVal]
@@ -24,7 +23,7 @@ parseExpr = parseAtom
 
 
 readExpr :: String -> String
-readExpr input = case parse parseExpr "readExprRoot" input of
+readExpr input = case parse (sepBy parseExpr space) "readExprRoot" input of
     Left err -> "No match: " ++ show err
     Right val -> show val
 
@@ -48,29 +47,25 @@ parseNumber :: Parser LispVal
 parseNumber = Number . read <$> many1 digit
 
 parseString :: Parser LispVal
-parseString = do
-    String <$> between (char '"') (char '"') (many chars)
-      where chars = escaped <|> noneOf "\""
-            escaped = char '\\' >> choice (zipWith escChar characters replacements)
-            escChar character replacement = char character >> return replacement
-            characters   = ['b',  'n',  'f',  'r',  't',  '\\', '\"', '/']
-            replacements = ['\b', '\n', '\f', '\r', '\t', '\\', '\"', '/']
+parseString = String <$> between (char '"') (char '"') (many chars)
+  where chars = escaped <|> noneOf "\""
+        escaped = char '\\' >> choice (zipWith escChar characters replacements)
+        escChar character replacement = char character >> return replacement
+        characters   = [ 'b',  'n',  'f',  'r',  't', '\\', '\"', '/']
+        replacements = ['\b', '\n', '\f', '\r', '\t', '\\', '\"', '/']
 
 parseList :: Parser [LispVal]
 parseList = sepEndBy parseExpr spaces
-
-parseDottedList :: Parser (Maybe LispVal)
-parseDottedList = optionMaybe (char '.' >> spaces >> parseExpr)
 
 parseListOrDottedList :: Parser LispVal
 parseListOrDottedList = do
     _ <- char '('
     list <- parseList
-    end <- parseDottedList
+    end <- optionMaybe (char '.' >> spaces >> parseExpr)
     _ <- char ')'
     return $ case end of
-      Nothing -> List list
-      Just x -> DottedList list x
+               Nothing -> List list
+               Just x -> DottedList list x
 
 parseQuoted :: Parser LispVal
 parseQuoted = char '\'' >>

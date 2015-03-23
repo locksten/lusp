@@ -37,6 +37,7 @@ prettyPrint (Bool x) = if x then "#t " else "#f "
 
 parseExpr :: Parser LispVal
 parseExpr = parseAtom
+         <|> parseStartingWithOctothorpe
          <|> parseString
          <|> parseNumber
          <|> parseQuoted
@@ -48,10 +49,17 @@ readExpr input = case parse (sepBy parseExpr space) "readExprRoot" input of
     Right val -> unlines (map prettyPrint val)
 
 symbol :: Parser Char
-symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
+symbol = oneOf "!$%&|*+-/:<=>?@^_~"
 
 spaces :: Parser ()
 spaces = skipMany1 space
+
+parseStartingWithOctothorpe :: Parser LispVal
+parseStartingWithOctothorpe = char '#' >>
+                              parseBool
+
+parseBool :: Parser LispVal
+parseBool = Bool . (== 't') <$> oneOf "tf"
 
 parseAtom :: Parser LispVal
 parseAtom = do

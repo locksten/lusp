@@ -31,8 +31,8 @@ prettyPrint (List xs) = prettyPrintList (List xs, 0)
 prettyPrint (DottedList xs end) = "( " ++ concatMap prettyPrint xs ++ ". " ++
                                   prettyPrint end ++ ") "
 prettyPrint (Atom x) = (init $ tail $ show x) ++ " "
-prettyPrint (Number x) = show x
-prettyPrint (String x) = show x
+prettyPrint (Number x) = show x ++ " "
+prettyPrint (String x) = show x ++ " "
 prettyPrint (Bool x) = if x then "#t " else "#f "
 
 parseExpr :: Parser LispVal

@@ -3,11 +3,15 @@ import System.Environment
 import Control.Monad
 import Control.Applicative ((<$>))
 import Data.Char
+import Numeric
+import Text.Parsec.Token (float)
+import Data.List (findIndices)
 
 data LispVal = Atom String
              | List [LispVal]
              | DottedList [LispVal] LispVal
              | Number Integer
+             | Float Float
              | String String
              | Char Char
              | Bool Bool
@@ -42,7 +46,8 @@ parseExpr :: Parser LispVal
 parseExpr = parseAtom
          <|> parseStartingWithOctothorpe
          <|> parseString
-         <|> parseNumber
+         <|> parseFloat
+         <|> parseDecimal
          <|> parseQuoted
          <|> parseListOrDottedList
 
@@ -57,7 +62,11 @@ spaces = skipMany1 space
 parseStartingWithOctothorpe :: Parser LispVal
 parseStartingWithOctothorpe = char '#' >>
                               (parseBool
-                           <|> parseChar)
+                           <|> parseChar
+                           <|> (char 'd' >> parseDecimal)
+                           <|> (char 'x' >> parseHex)
+                           <|> (char 'b' >> parseBin)
+                           <|> (char 'o' >> parseOct))
 
 parseBool :: Parser LispVal
 parseBool = Bool . (== 't') <$> oneOf "tf"
@@ -82,13 +91,13 @@ parseChar = do
 delimiter :: [Char]
 delimiter = " \n()\";"
 
-extendedAlphabeticChar :: [Char]
-extendedAlphabeticChar = "+-.*/<=>!?:$%_&~^"
+extendedAlphabeticChars:: [Char]
+extendedAlphabeticChars = "+-.*/<=>!?:$%_&~^"
 
 parseAtom :: Parser LispVal
 parseAtom = do
-    first <- letter <|> oneOf extendedAlphabeticChar
-    rest <- many $ letter <|> oneOf extendedAlphabeticChar <|>
+    first <- letter <|> oneOf extendedAlphabeticChars
+    rest <- many $ letter <|> oneOf extendedAlphabeticChars <|>
                    digit <|> oneOf ".+-"
     let atom = first:rest
     return $ case atom of
@@ -96,8 +105,27 @@ parseAtom = do
                "#f" -> Bool False
                _    -> Atom atom
 
-parseNumber :: Parser LispVal
-parseNumber = Number . read <$> many1 digit
+parseDecimal :: Parser LispVal
+parseDecimal = Number . read <$> many1 digit
+
+parseFloat :: Parser LispVal
+parseFloat = do
+    x <- many1 digit
+    _ <- char '.'
+    y <- many1 digit
+    return $ Float (fst . head $ readFloat (x ++ "." ++ y))
+
+parseHex :: Parser LispVal
+parseHex = (Number . hexToDec) <$>  many1 hexDigit
+  where hexToDec x = fst $ readHex x !! 0
+
+parseOct :: Parser LispVal
+parseOct = (Number . octToDec) <$>  many1 octDigit
+  where octToDec x = fst $ readOct x !! 0
+
+parseBin :: Parser LispVal
+parseBin = (Number . binToDec . map digitToInt) <$> many1 (oneOf "01")
+  where binToDec x = sum $ map (2^) $ findIndices (==1) $ reverse x
 
 parseString :: Parser LispVal
 parseString = String <$> between (char '"') (char '"') (many chars)

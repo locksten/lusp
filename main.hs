@@ -80,7 +80,7 @@ parseChar = do
                            else return ""
 
 delimiter :: [Char]
-delimiter = " \n\t[]{}();\"'`|"
+delimiter = " \n()\";"
 
 extendedAlphabeticChar :: [Char]
 extendedAlphabeticChar = "+-.*/<=>!?:$%_&~^"

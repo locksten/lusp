@@ -1,17 +1,21 @@
 import Text.ParserCombinators.Parsec hiding (spaces)
 import System.Environment
 import Control.Monad
-import Control.Applicative ((<$>), (<*), (*>))
+import Control.Applicative ((<$>), (<*), (*>), (<*>))
 import Data.Char
 import Numeric
 import Text.Parsec.Token (float)
 import Data.List (findIndices)
+import Data.Ratio
+import Data.Complex
 
 data LispVal = Atom String
              | List [LispVal]
              | DottedList [LispVal] LispVal
              | Integer Integer
              | Float Float
+             | Ratio Rational
+             | Complex (Complex Float)
              | String String
              | Char Char
              | Bool Bool
@@ -39,6 +43,9 @@ prettyPrint (DottedList xs end) = "( " ++ concatMap prettyPrint xs ++ ". " ++
 prettyPrint (Atom x) = (init $ tail $ show x) ++ " "
 prettyPrint (Integer x) = show x ++ " "
 prettyPrint (Float x) = show x ++ " "
+prettyPrint (Ratio x) = show (numerator x) ++ "/" ++ show (denominator x)
+                        ++ " "
+prettyPrint (Complex x) = show (realPart x) ++ "+" ++ show (imagPart x) ++ " "
 prettyPrint (String x) = show x ++ " "
 prettyPrint (Char x) = "#\\" ++ init (tail $ show x) ++ " "
 prettyPrint (Bool x) = if x then "#t " else "#f "
@@ -48,7 +55,7 @@ parseExpr = many spaces
             *>  (parseAtom
             <|> parseStartingWithOctothorpe
             <|> parseString
-            <|> parseDecimal
+            <|> parseNumber
             <|> parseQuoted
             <|> parseListOrDottedList)
             <*  many spaces
@@ -65,7 +72,7 @@ parseStartingWithOctothorpe :: Parser LispVal
 parseStartingWithOctothorpe = char '#' >>
                               (parseBool
                            <|> parseChar
-                           <|> (char 'd' >> parseDecimal)
+                           <|> (char 'd' >> parseNumber)
                            <|> (char 'x' >> parseHex)
                            <|> (char 'b' >> parseBin)
                            <|> (char 'o' >> parseOct))
@@ -107,13 +114,32 @@ parseAtom = do
                "#f" -> Bool False
                _    -> Atom atom
 
-parseDecimal :: Parser LispVal
-parseDecimal = do
-    front <- many1 digit
-    back <- optionMaybe (char '.' >> many1 digit)
-    return $ case back of
-               Just b -> Float . fst . head $ readFloat (front ++ "." ++ b)
-               Nothing -> (Integer . read) front
+parseNumber :: Parser LispVal
+parseNumber = try parseRatio
+           <|> try parseComplex
+           <|> try parseFloat
+           <|> parseInteger
+
+parseInteger :: Parser LispVal
+parseInteger = (Integer . read) <$> many1 digit
+
+parseFloat :: Parser LispVal
+parseFloat = do x <- many1 digit <* char '.'
+                y <- many1 digit
+                return $ Float (fst . head $ readFloat (x ++ "." ++ y))
+
+parseRatio :: Parser LispVal
+parseRatio = do x <- many1 digit <* char '/'
+                y <- many1 digit
+                return $ Ratio ((read x) % (read y))
+
+parseComplex = do x <- (try parseFloat <|> parseInteger) <* char '+'
+                  y <- (try parseFloat <|> parseInteger) <* char 'i'
+                  return $ Complex (toFloat x :+ toFloat y)
+
+toFloat :: LispVal -> Float
+toFloat (Float f)   = f
+toFloat (Integer n) = fromIntegral n
 
 parseHex :: Parser LispVal
 parseHex = (Integer . hexToDec) <$>  many1 hexDigit

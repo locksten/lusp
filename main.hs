@@ -57,6 +57,8 @@ parseExpr = many spaces
             <|> parseString
             <|> parseNumber
             <|> parseQuoted
+            <|> parseQuasiQuoted
+            <|> parseUnQuote
             <|> parseListOrDottedList)
             <*  many spaces
 
@@ -173,6 +175,11 @@ parseListOrDottedList = do
                Just x -> DottedList list x
 
 parseQuoted :: Parser LispVal
-parseQuoted = char '\'' >>
-              parseExpr >>= \ x ->
-              return $ List [Atom "quote", x]
+parseQuoted = (\x -> List [Atom "quote", x]) <$> (char '\'' *> parseExpr)
+
+parseQuasiQuoted :: Parser LispVal
+parseQuasiQuoted = (\x -> List [Atom "quasiquote", x]) <$>
+                   (char '`' *> parseExpr)
+
+parseUnQuote :: Parser LispVal
+parseUnQuote = (\x -> List [Atom "unquote", x]) <$> (char ',' *> parseExpr)

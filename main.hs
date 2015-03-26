@@ -105,19 +105,16 @@ parseChar = do
 delimiter :: [Char]
 delimiter = " \n()\";"
 
-extendedAlphabeticChars:: [Char]
-extendedAlphabeticChars = "+-.*/<=>!?:$%_&~^"
-
 parseAtom :: Parser LispVal
-parseAtom = do
-    first <- letter <|> oneOf extendedAlphabeticChars
-    rest <- many $ letter <|> oneOf extendedAlphabeticChars <|>
-                   digit <|> oneOf ".+-"
-    let atom = first:rest
-    return $ case atom of
-               "#t" -> Bool True
-               "#f" -> Bool False
-               _    -> Atom atom
+parseAtom = peculiar >>= (\x -> case (x) of
+                         Just p  -> return $ Atom p
+                         Nothing -> Atom <$> ((:) <$> initial <*> subsequent))
+      where initial = letter <|> specialInitial
+            specialInitial = oneOf "!$%&*/:<=>?^_~"
+            subsequent = many $ initial <|> digit <|> specialSubsequent
+            specialSubsequent = oneOf "+-.@"
+            peculiarIdentifier = choice $ map string ["+", "-", "..."]
+            peculiar = try $ optionMaybe peculiarIdentifier
 
 parseNumber :: Parser LispVal
 parseNumber = try parseRatio

@@ -12,6 +12,7 @@ import Data.Complex
 data LispVal = Atom String
              | List [LispVal]
              | DottedList [LispVal] LispVal
+             | Vector [LispVal]
              | Integer Integer
              | Float Float
              | Ratio Rational
@@ -38,6 +39,7 @@ prettyPrintList (xs, depth) = case xs of
 
 prettyPrint :: LispVal -> String
 prettyPrint (List xs) = prettyPrintList (List xs, 0)
+prettyPrint (Vector xs) = "#" ++ prettyPrintList (List xs, 0)
 prettyPrint (DottedList xs end) = "( " ++ concatMap prettyPrint xs ++ ". " ++
                                   prettyPrint end ++ ") "
 prettyPrint (Atom x) = (init $ tail $ show x) ++ " "
@@ -74,6 +76,7 @@ parseStartingWithOctothorpe :: Parser LispVal
 parseStartingWithOctothorpe = char '#' >>
                               (parseBool
                            <|> parseChar
+                           <|> parseVector
                            <|> (char 'd' >> parseNumber)
                            <|> (char 'x' >> parseHex)
                            <|> (char 'b' >> parseBin)
@@ -144,11 +147,11 @@ toFloat (Float f)   = f
 toFloat (Integer n) = fromIntegral n
 
 parseHex :: Parser LispVal
-parseHex = (Integer . hexToDec) <$>  many1 hexDigit
+parseHex = (Integer . hexToDec) <$> many1 hexDigit
   where hexToDec x = fst $ readHex x !! 0
 
 parseOct :: Parser LispVal
-parseOct = (Integer . octToDec) <$>  many1 octDigit
+parseOct = (Integer . octToDec) <$> many1 octDigit
   where octToDec x = fst $ readOct x !! 0
 
 parseBin :: Parser LispVal
@@ -173,6 +176,9 @@ parseListOrDottedList = do
     return $ case end of
                Nothing -> List list
                Just x -> DottedList list x
+
+parseVector :: Parser LispVal
+parseVector = Vector <$> (char '(' *> parseList <* char ')')
 
 parseQuoted :: Parser LispVal
 parseQuoted = (\x -> List [Atom "quote", x]) <$> (char '\'' *> parseExpr)

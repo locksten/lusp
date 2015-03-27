@@ -26,15 +26,14 @@ main :: IO ()
 main = getArgs >>= (\args -> unless (length args < 1) $ putStrLn $
        init <$> readExpr $ head args)
 
-prettyPrintIndentLevel :: Int
-prettyPrintIndentLevel = 4
-
 prettyPrintList :: (LispVal, Int) -> String
 prettyPrintList (xs, depth) = case xs of
     (List ys) -> indent depth ++ "( " ++ concatMap iteration ys ++ ") "
       where iteration ts = prettyPrintList (ts, depth + 1)
             indent d = if d == 0 then "" else "\n" ++ concat
                 (replicate (d * prettyPrintIndentLevel) " ")
+            prettyPrintIndentLevel :: Int
+            prettyPrintIndentLevel = 4
     _         -> prettyPrint xs
 
 prettyPrint :: LispVal -> String
@@ -53,16 +52,16 @@ prettyPrint (Char x) = "#\\" ++ init (tail $ show x) ++ " "
 prettyPrint (Bool x) = if x then "#t " else "#f "
 
 parseExpr :: Parser LispVal
-parseExpr = many spaces
-            *>  (parseAtom
-            <|> parseStartingWithOctothorpe
-            <|> parseString
-            <|> parseNumber
-            <|> parseQuoted
-            <|> parseQuasiQuoted
-            <|> parseUnQuote
-            <|> parseListOrDottedList)
-            <*  many spaces
+parseExpr =  many spaces *>
+            (parseAtom
+         <|> parseStartingWithOctothorpe
+         <|> parseString
+         <|> parseNumber
+         <|> parseQuoted
+         <|> parseQuasiQuoted
+         <|> parseUnQuote
+         <|> parseListOrDottedList)
+         <*  many spaces
 
 readExpr :: String -> String
 readExpr input = case parse (many parseExpr) "readExprRoot" input of
@@ -73,14 +72,14 @@ spaces :: Parser ()
 spaces = skipMany1 space
 
 parseStartingWithOctothorpe :: Parser LispVal
-parseStartingWithOctothorpe = char '#' >>
+parseStartingWithOctothorpe =  char '#' *>
                               (parseBool
                            <|> parseChar
                            <|> parseVector
-                           <|> (char 'd' >> parseNumber)
-                           <|> (char 'x' >> parseHex)
-                           <|> (char 'b' >> parseBin)
-                           <|> (char 'o' >> parseOct))
+                           <|> char 'd' *> parseNumber
+                           <|> char 'x' *> parseHex
+                           <|> char 'b' *> parseBin
+                           <|> char 'o' *> parseOct)
 
 parseBool :: Parser LispVal
 parseBool = Bool . (== 't') <$> oneOf "tf"
@@ -106,7 +105,7 @@ delimiter :: [Char]
 delimiter = " \n()\";"
 
 parseAtom :: Parser LispVal
-parseAtom = peculiar >>= (\x -> case (x) of
+parseAtom = peculiar >>= (\x -> case x of
                          Just p  -> return $ Atom p
                          Nothing -> Atom <$> ((:) <$> initial <*> subsequent))
       where initial = letter <|> specialInitial
@@ -117,7 +116,7 @@ parseAtom = peculiar >>= (\x -> case (x) of
             peculiar = try $ optionMaybe peculiarIdentifier
 
 parseNumber :: Parser LispVal
-parseNumber = try parseRatio
+parseNumber =  try parseRatio
            <|> try parseComplex
            <|> try parseFloat
            <|> parseInteger
@@ -128,20 +127,20 @@ parseInteger = (Integer . read) <$> many1 digit
 parseFloat :: Parser LispVal
 parseFloat = do x <- many1 digit <* char '.'
                 y <- many1 digit
-                return $ Float (fst . head $ readFloat (x ++ "." ++ y))
+                return . Float . fst . head $ readFloat (x ++ "." ++ y)
 
 parseRatio :: Parser LispVal
 parseRatio = do x <- many1 digit <* char '/'
                 y <- many1 digit
-                return $ Ratio ((read x) % (read y))
+                return $ Ratio (read x % read y)
 
+parseComplex :: Parser LispVal
 parseComplex = do x <- (try parseFloat <|> parseInteger) <* char '+'
                   y <- (try parseFloat <|> parseInteger) <* char 'i'
                   return $ Complex (toFloat x :+ toFloat y)
-
-toFloat :: LispVal -> Float
-toFloat (Float f)   = f
-toFloat (Integer n) = fromIntegral n
+                    where toFloat :: LispVal -> Float
+                          toFloat (Float f)   = f
+                          toFloat (Integer n) = fromIntegral n
 
 parseHex :: Parser LispVal
 parseHex = (Integer . hexToDec) <$> many1 hexDigit
@@ -169,7 +168,7 @@ parseList = many parseExpr
 parseListOrDottedList :: Parser LispVal
 parseListOrDottedList = do
     list <- char '(' *> parseList
-    end <- optionMaybe (char '.' >> parseExpr) <* char ')'
+    end <- optionMaybe (char '.' *> parseExpr <* char ')')
     return $ case end of
                Nothing -> List list
                Just x -> DottedList list x

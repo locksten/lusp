@@ -165,7 +165,7 @@ parseList = many parseExpr
 parseListOrDottedList :: Parser LispVal
 parseListOrDottedList = do
     list <- char '(' *> parseList
-    end <- optionMaybe (char '.' *> parseExpr <* char ')')
+    end <- optionMaybe (char '.' *> parseExpr) <* char ')'
     return $ case end of
                Nothing -> List list
                Just x -> DottedList list x

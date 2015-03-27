@@ -1,4 +1,4 @@
-import Text.ParserCombinators.Parsec hiding (spaces)
+import Text.ParserCombinators.Parsec
 import System.Environment
 import Control.Monad
 import Control.Applicative ((<$>), (<*), (*>), (<*>))
@@ -52,7 +52,7 @@ prettyPrint (Char x) = "#\\" ++ init (tail $ show x) ++ " "
 prettyPrint (Bool x) = if x then "#t " else "#f "
 
 parseExpr :: Parser LispVal
-parseExpr =  many spaces *>
+parseExpr =  spaces *>
             (parseAtom
          <|> parseStartingWithOctothorpe
          <|> parseString
@@ -61,15 +61,12 @@ parseExpr =  many spaces *>
          <|> parseQuasiQuoted
          <|> parseUnQuote
          <|> parseListOrDottedList)
-         <*  many spaces
+         <*  spaces
 
 readExpr :: String -> String
 readExpr input = case parse (many parseExpr) "readExprRoot" input of
     Left err -> "No match: " ++ show err
     Right val -> unlines (map prettyPrint val)
-
-spaces :: Parser ()
-spaces = skipMany1 space
 
 parseStartingWithOctothorpe :: Parser LispVal
 parseStartingWithOctothorpe =  char '#' *>

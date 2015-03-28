@@ -1,0 +1,21 @@
+name:                scheme
+version:             0.1.0.0
+synopsis:            Front-end for scheme-lib
+-- description:
+license:             MIT
+license-file:        LICENSE
+author:              locksten
+maintainer:          locksten@users.noreply.github.com
+-- copyright:
+-- category:
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+executable scheme
+  main-is:             Main.hs
+-- other-modules:
+-- other-extensions:
+  build-depends:       base >=4.7 && <4.8, scheme-lib == 0.1.*
+  hs-source-dirs:      src
+  default-language:    Haskell2010

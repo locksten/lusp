@@ -92,6 +92,7 @@ parseChar = do
                               "tab"     -> '\t'
                               _ -> error "Unrecognized char literal name"
     where
+        getRest :: Char -> Parser String
         getRest first = if isAlpha first
                            then many $ noneOf delimiter
                            else return ""
@@ -153,6 +154,7 @@ parseString :: Parser LispVal
 parseString = String <$> between (char '"') (char '"') (many chars)
   where chars = escaped <|> noneOf "\""
         escaped = char '\\' >> choice (zipWith escChar characters replacements)
+        escChar :: Char -> Char -> Parser Char
         escChar character replacement = char character >> return replacement
         characters   = [ 'b',  'n',  'f',  'r',  't', '\\', '\"', '/']
         replacements = ['\b', '\n', '\f', '\r', '\t', '\\', '\"', '/']

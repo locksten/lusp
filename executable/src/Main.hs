@@ -5,4 +5,4 @@ import Control.Applicative ((<$>), (<*), (*>), (<*>))
 
 main :: IO ()
 main = getArgs >>= (\args -> unless (length args < 1) $ putStrLn $
-       init <$> unlines . map prettyPrint <$> parseExpressions $ head args)
+       init <$> unlines . map show <$> parseExpressions $ head args)

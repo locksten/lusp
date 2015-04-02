@@ -1,4 +1,4 @@
-module SchemeParser (LispVal(..), parseExpressions, prettyPrint) where
+module SchemeParser (LispVal(..), parseExpressions) where
 
 import Text.ParserCombinators.Parsec
 import System.Environment
@@ -22,7 +22,7 @@ data LispVal = Atom String
              | String String
              | Char Char
              | Bool Bool
-             deriving (Show)
+instance Show LispVal where show = prettyPrint
 
 prettyPrintList :: (LispVal, Int) -> String
 prettyPrintList (xs, depth) = case xs of

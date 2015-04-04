@@ -1,10 +1,10 @@
 module Lesp.LispError (LispError(..)) where
 
-import Lesp.LispVal
+import Lesp.LispVal (LispVal(..))
 
-import Text.Parsec.Error
+import Text.Parsec.Error (ParseError)
 
-import Control.Exception
+import Control.Exception (Exception)
 
 data LispError = NumArgs Integer [LispVal]
                | TypeMismatch String LispVal

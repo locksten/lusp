@@ -1,20 +1,18 @@
 module Lesp.Parser (parseExpressions) where
 
-import Lesp.LispError
-import Lesp.LispVal
+import Lesp.LispError (LispError(..))
+import Lesp.LispVal (LispVal(..))
 
 import Text.Parsec.Token (float)
 import Text.ParserCombinators.Parsec
 
 import Control.Applicative ((<$>), (<*), (*>), (<*>))
 import Control.Exception (throw)
-import Control.Monad
-import Data.Char
-import Data.Complex
+import Data.Char (toLower, digitToInt, isAlpha)
+import Data.Complex (Complex((:+)))
 import Data.List (findIndices)
-import Data.Ratio
-import Numeric
-import System.Environment
+import Data.Ratio ((%))
+import Numeric (readFloat, readHex, readOct)
 
 parseExpr :: Parser LispVal
 parseExpr =  spaces *>

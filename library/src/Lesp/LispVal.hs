@@ -1,7 +1,7 @@
 module Lesp.LispVal (LispVal(..)) where
 
-import Data.Complex
-import Data.Ratio
+import Data.Complex (Complex((:+)), realPart, imagPart)
+import Data.Ratio ((%), numerator, denominator)
 
 data LispVal = Atom String
              | List [LispVal]

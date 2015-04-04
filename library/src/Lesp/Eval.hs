@@ -1,6 +1,6 @@
 module Lesp.Eval (eval) where
 
-import Lesp.LispVal
+import Lesp.LispVal (LispVal(..))
 
 eval :: LispVal -> LispVal
 eval v@(String _)  = v

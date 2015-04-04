@@ -1,10 +1,9 @@
-import Lesp.Eval
-import Lesp.LispVal
-import Lesp.Parser
+import Lesp.Eval (eval)
+import Lesp.LispVal (LispVal(..))
+import Lesp.Parser (parseExpressions)
 
-import Control.Applicative ((<$>), (<*), (*>), (<*>))
-import Control.Monad
-import System.Environment
+import Control.Monad (when)
+import System.Environment (getArgs)
 
 main :: IO ()
 main = do

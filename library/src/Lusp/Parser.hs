@@ -1,6 +1,6 @@
 module Lusp.Parser (parseExpressions) where
 
-import Lusp.LispError (LispError(..))
+import Lusp.LispError (LispError(ParseError))
 import Lusp.LispVal (LispVal(..))
 
 import Text.Parsec.Token (float)
@@ -28,7 +28,7 @@ parseExpr =  spaces *>
 
 parseExpressions :: String -> [LispVal]
 parseExpressions input = case parse (many parseExpr) "" input of
-                           Left e -> throw $ Parser e
+                           Left e -> throw $ ParseError e
                            Right val -> val
 
 parseStartingWithOctothorpe :: Parser LispVal

@@ -8,7 +8,7 @@ import Control.Exception (Exception)
 
 data LispError = NumArgs Integer [LispVal]
                | TypeMismatch String LispVal
-               | Parser ParseError
+               | ParseError ParseError
                | BadSpecialForm String LispVal
                | NotFunction String String
                | UnboundVar String String
@@ -24,5 +24,5 @@ showError (NumArgs expected found)      = "Expected " ++ show expected
                                         ++ " args; found values " ++ show found
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                         ++ ", found " ++ show found
-showError (Parser parseErr)             = "Parse error at " ++ show parseErr
+showError (ParseError parseErr)         = "Parse error at " ++ show parseErr
 showError (Other str)                   = show str

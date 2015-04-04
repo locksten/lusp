@@ -98,6 +98,7 @@ parseComplex = do x <- (try parseFloat <|> parseInteger) <* char '+'
                     where toFloat :: LispVal -> Float
                           toFloat (Float f)   = f
                           toFloat (Integer n) = fromIntegral n
+                          toFloat _           = error "can't convert to float"
 
 parseHex :: Parser LispVal
 parseHex = (Integer . hexToDec) <$> many1 hexDigit

@@ -1,7 +1,7 @@
-module Lesp.Parser (parseExpressions) where
+module Lusp.Parser (parseExpressions) where
 
-import Lesp.LispError (LispError(..))
-import Lesp.LispVal (LispVal(..))
+import Lusp.LispError (LispError(..))
+import Lusp.LispVal (LispVal(..))
 
 import Text.Parsec.Token (float)
 import Text.ParserCombinators.Parsec

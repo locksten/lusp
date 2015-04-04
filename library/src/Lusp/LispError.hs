@@ -1,6 +1,6 @@
-module Lesp.LispError (LispError(..)) where
+module Lusp.LispError (LispError(..)) where
 
-import Lesp.LispVal (LispVal(..))
+import Lusp.LispVal (LispVal(..))
 
 import Text.Parsec.Error (ParseError)
 

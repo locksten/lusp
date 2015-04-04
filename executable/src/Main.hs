@@ -1,6 +1,6 @@
-import Lesp.Eval (eval)
-import Lesp.LispVal (LispVal(..))
-import Lesp.Parser (parseExpressions)
+import Lusp.Eval (eval)
+import Lusp.LispVal (LispVal(..))
+import Lusp.Parser (parseExpressions)
 
 import Control.Monad (when)
 import System.Environment (getArgs)

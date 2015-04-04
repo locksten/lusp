@@ -1,4 +1,4 @@
-module Lesp.LispVal (LispVal(..)) where
+module Lusp.LispVal (LispVal(..)) where
 
 import Data.Complex (Complex((:+)), realPart, imagPart)
 import Data.Ratio ((%), numerator, denominator)

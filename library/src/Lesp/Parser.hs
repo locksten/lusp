@@ -27,7 +27,7 @@ parseExpr =  spaces *>
          <*  spaces
 
 parseExpressions :: String -> [LispVal]
-parseExpressions input = case parse (many parseExpr) "readExprRoot" input of
+parseExpressions input = case parse (many parseExpr) "" input of
                            Left e -> throw $ Parser e
                            Right val -> val
 

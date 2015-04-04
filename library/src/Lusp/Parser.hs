@@ -57,13 +57,11 @@ parseChar = do
                               "tab"     -> '\t'
                               _ -> error "Unrecognized char literal name"
     where
+        delimiter = " \n()\";"
         getRest :: Char -> Parser String
         getRest first = if isAlpha first
                            then many $ noneOf delimiter
                            else return ""
-
-delimiter :: [Char]
-delimiter = " \n()\";"
 
 parseAtom :: Parser LispVal
 parseAtom = peculiar >>= (\x -> case x of

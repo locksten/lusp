@@ -1,5 +1,6 @@
-module SchemeEval (eval) where
-import SchemeParser
+module Lesp.Eval (eval) where
+
+import Lesp.LispVal
 
 eval :: LispVal -> LispVal
 eval v@(String _)  = v

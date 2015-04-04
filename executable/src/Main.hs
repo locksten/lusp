@@ -1,8 +1,10 @@
-import SchemeParser
-import SchemeEval
-import System.Environment
-import Control.Monad
+import Lesp.Eval
+import Lesp.LispVal
+import Lesp.Parser
+
 import Control.Applicative ((<$>), (<*), (*>), (<*>))
+import Control.Monad
+import System.Environment
 
 main :: IO ()
 main = do

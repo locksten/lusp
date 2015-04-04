@@ -1,5 +1,4 @@
 import Lusp.Eval (eval)
-import Lusp.LispVal (LispVal(..))
 import Lusp.Parser (parseExpressions)
 
 import Control.Monad (when)

@@ -3,10 +3,8 @@ module Lusp.Parser (parseExpressions) where
 import Lusp.LispError (LispError(ParseError))
 import Lusp.LispVal (LispVal(..))
 
-import Text.Parsec.Token (float)
 import Text.ParserCombinators.Parsec
 
-import Control.Applicative ((<$>), (<*), (*>), (<*>))
 import Control.Exception (throw)
 import Data.Char (toLower, digitToInt, isAlpha)
 import Data.Complex (Complex((:+)))

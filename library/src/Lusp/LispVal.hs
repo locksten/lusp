@@ -1,7 +1,7 @@
 module Lusp.LispVal (LispVal(..)) where
 
-import Data.Complex (Complex((:+)), realPart, imagPart)
-import Data.Ratio ((%), numerator, denominator)
+import Data.Complex (Complex, realPart, imagPart)
+import Data.Ratio (numerator, denominator)
 
 data LispVal = Atom String
              | List [LispVal]

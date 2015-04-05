@@ -2,7 +2,8 @@ module Lusp.Numeric (add
                     ,subtract
                     ,multiply
                     ,divide
-                    ,modulo) where
+                    ,modulo
+                    ,remainder) where
 
 import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
@@ -111,3 +112,10 @@ modulo [(Integer a), (Integer b)] = Integer (a `mod` b)
 modulo [(Integer _), x] = throw $ TypeMismatch "integer" x
 modulo [x, (Integer _)] = throw $ TypeMismatch "integer" x
 modulo xs = throw $ NumArgs 2 xs
+
+remainder :: [LispVal] -> LispVal
+remainder [(Integer _), (Integer 0)] = throw DivBy0
+remainder [(Integer a), (Integer b)] = Integer (a `rem` b)
+remainder [(Integer _), x] = throw $ TypeMismatch "integer" x
+remainder [x, (Integer _)] = throw $ TypeMismatch "integer" x
+remainder xs = throw $ NumArgs 2 xs

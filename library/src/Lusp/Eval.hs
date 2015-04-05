@@ -7,7 +7,8 @@ import qualified Lusp.Numeric as N (add
                                    ,subtract
                                    ,multiply
                                    ,divide
-                                   ,modulo)
+                                   ,modulo
+                                   ,remainder)
 
 import Control.Exception (throw)
 
@@ -29,8 +30,9 @@ apply func args = maybe (throw $
                   ($ args) $ lookup func primitives
 
 primitives :: [(String, ([LispVal] -> LispVal))]
-primitives = [("+", N.add     )
+primitives = [("+", N.add)
              ,("-", N.subtract)
              ,("*", N.multiply)
-             ,("/", N.divide  )
-             ,("modulo", N.modulo)]
+             ,("/", N.divide)
+             ,("modulo", N.modulo)
+             ,("remainder", N.remainder)]

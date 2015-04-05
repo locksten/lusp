@@ -1,4 +1,8 @@
-module Lusp.Numeric where
+module Lusp.Numeric (add
+                    ,subtract
+                    ,multiply
+                    ,divide
+                    ,modulo) where
 
 import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
@@ -13,7 +17,8 @@ import Control.Exception (throw)
 import Data.Complex (Complex((:+)))
 import Data.Ratio ((%), numerator, denominator)
 
-import Prelude hiding (div)
+import Prelude hiding (div
+                      ,subtract)
 import qualified Prelude as P (div)
 
 numCast :: LispVal -> LispVal -> (LispVal, LispVal)
@@ -99,3 +104,10 @@ divide params = foldl1 (\x y -> div $ numCast x y) params
             | otherwise = Complex (a / b)
         div _ = error "Expected Number"
         err = throw DivBy0
+
+modulo :: [LispVal] -> LispVal
+modulo [(Integer _), (Integer 0)] = throw DivBy0
+modulo [(Integer a), (Integer b)] = Integer (a `mod` b)
+modulo [(Integer _), x] = throw $ TypeMismatch "integer" x
+modulo [x, (Integer _)] = throw $ TypeMismatch "integer" x
+modulo xs = throw $ NumArgs 2 xs

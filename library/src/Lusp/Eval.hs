@@ -6,7 +6,8 @@ import Lusp.LispVal (LispVal(..))
 import qualified Lusp.Numeric as N (add
                                    ,subtract
                                    ,multiply
-                                   ,divide)
+                                   ,divide
+                                   ,modulo)
 
 import Control.Exception (throw)
 
@@ -31,4 +32,5 @@ primitives :: [(String, ([LispVal] -> LispVal))]
 primitives = [("+", N.add     )
              ,("-", N.subtract)
              ,("*", N.multiply)
-             ,("/", N.divide  )]
+             ,("/", N.divide  )
+             ,("modulo", N.modulo)]

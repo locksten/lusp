@@ -108,22 +108,17 @@ divide params = foldl1 (\x y -> div $ numCast x y) params
         err = throw DivBy0
 
 modulo :: [LispVal] -> LispVal
-modulo [(Integer _), (Integer 0)] = throw DivBy0
-modulo [(Integer a), (Integer b)] = Integer (a `mod` b)
-modulo [(Integer _), x] = throw $ TypeMismatch "integer" x
-modulo [x, (Integer _)] = throw $ TypeMismatch "integer" x
-modulo xs = throw $ NumArgs 2 xs
+modulo xs = integerBinDivOp xs mod
 
 remainder :: [LispVal] -> LispVal
-remainder [(Integer _), (Integer 0)] = throw DivBy0
-remainder [(Integer a), (Integer b)] = Integer (a `rem` b)
-remainder [(Integer _), x] = throw $ TypeMismatch "integer" x
-remainder [x, (Integer _)] = throw $ TypeMismatch "integer" x
-remainder xs = throw $ NumArgs 2 xs
+remainder xs = integerBinDivOp xs rem
 
 quotient :: [LispVal] -> LispVal
-quotient [(Integer _), (Integer 0)] = throw DivBy0
-quotient [(Integer a), (Integer b)] = Integer (a `quot` b)
-quotient [(Integer _), x] = throw $ TypeMismatch "integer" x
-quotient [x, (Integer _)] = throw $ TypeMismatch "integer" x
-quotient xs = throw $ NumArgs 2 xs
+quotient xs = integerBinDivOp xs quot
+
+integerBinDivOp :: [LispVal] -> (Integer -> Integer -> Integer) -> LispVal
+integerBinDivOp [(Integer _), (Integer 0)] _ = throw DivBy0
+integerBinDivOp [(Integer a), (Integer b)] op = Integer (a `op` b)
+integerBinDivOp [(Integer _), x] _ = throw $ TypeMismatch "integer" x
+integerBinDivOp [x, (Integer _)] _ = throw $ TypeMismatch "integer" x
+integerBinDivOp xs _ = throw $ NumArgs 2 xs

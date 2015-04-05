@@ -12,6 +12,7 @@ data LispError = NumArgs Integer [LispVal]
                | BadSpecialForm String LispVal
                | NotFunction String String
                | UnboundVar String String
+               | DivBy0
                | Other String
 instance Show LispError where show = showError
 instance Exception LispError
@@ -25,4 +26,5 @@ showError (NumArgs expected found)      = "Expected " ++ show expected
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                         ++ ", found " ++ show found
 showError (ParseError parseErr)         = "Parse error at " ++ show parseErr
+showError (DivBy0)                      = "Attempted division by 0"
 showError (Other str)                   = show str

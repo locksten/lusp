@@ -8,7 +8,8 @@ import qualified Lusp.Numeric as N (add
                                    ,multiply
                                    ,divide
                                    ,modulo
-                                   ,remainder)
+                                   ,remainder
+                                   ,quotient)
 
 import Control.Exception (throw)
 
@@ -35,4 +36,5 @@ primitives = [("+", N.add)
              ,("*", N.multiply)
              ,("/", N.divide)
              ,("modulo", N.modulo)
-             ,("remainder", N.remainder)]
+             ,("remainder", N.remainder)
+             ,("quotient", N.quotient)]

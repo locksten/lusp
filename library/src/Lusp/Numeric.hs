@@ -3,7 +3,8 @@ module Lusp.Numeric (add
                     ,multiply
                     ,divide
                     ,modulo
-                    ,remainder) where
+                    ,remainder
+                    ,quotient) where
 
 import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
@@ -119,3 +120,10 @@ remainder [(Integer a), (Integer b)] = Integer (a `rem` b)
 remainder [(Integer _), x] = throw $ TypeMismatch "integer" x
 remainder [x, (Integer _)] = throw $ TypeMismatch "integer" x
 remainder xs = throw $ NumArgs 2 xs
+
+quotient :: [LispVal] -> LispVal
+quotient [(Integer _), (Integer 0)] = throw DivBy0
+quotient [(Integer a), (Integer b)] = Integer (a `quot` b)
+quotient [(Integer _), x] = throw $ TypeMismatch "integer" x
+quotient [x, (Integer _)] = throw $ TypeMismatch "integer" x
+quotient xs = throw $ NumArgs 2 xs

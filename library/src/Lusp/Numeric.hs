@@ -65,7 +65,6 @@ numSub params = foldl1 (\x y -> sub $ numCast x y) params
         sub ((Complex a), (Complex b)) = Complex $ a - b
         sub _ = error "Expected Number"
 
-
 numMul :: [LispVal] -> LispVal
 numMul [] = Integer 1
 numMul params = foldl1 (\x y -> mul $ numCast x y) params

@@ -2,7 +2,10 @@ module Lusp.Eval (eval) where
 
 import Lusp.LispError (LispError(..))
 import Lusp.LispVal (LispVal(..))
-import Lusp.Numeric
+import Lusp.Numeric (numAdd
+                    ,numSub
+                    ,numMul
+                    ,numDiv)
 
 import Control.Exception (throw)
 
@@ -24,4 +27,7 @@ apply func args = maybe (throw $
                   ($ args) $ lookup func primitives
 
 primitives :: [(String, ([LispVal] -> LispVal))]
-primitives = undefined
+primitives = [("+", numAdd)
+             ,("-", numSub)
+             ,("*", numMul)
+             ,("/", numDiv)]

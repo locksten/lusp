@@ -2,6 +2,7 @@ module Lusp.Eval (eval) where
 
 import Lusp.LispError (LispError(..))
 import Lusp.LispVal (LispVal(..))
+import Lusp.Numeric
 
 import Control.Exception (throw)
 

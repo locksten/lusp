@@ -13,6 +13,9 @@ import Control.Exception (throw)
 import Data.Complex (Complex((:+)))
 import Data.Ratio ((%), numerator, denominator)
 
+import Prelude hiding (div)
+import qualified Prelude as P (div)
+
 numCast :: LispVal -> LispVal -> (LispVal, LispVal)
 numCast a@(Integer _) b@(Integer _) = (a, b)
 numCast a@(Ratio   _) b@(Ratio   _) = (a, b)
@@ -43,56 +46,56 @@ ratioToComplex (Ratio x) = Complex $ (fromInteger $ numerator x)
                                    / (fromInteger $ denominator x)
 ratioToComplex _ = error "Expected Ratio"
 
-numAdd :: [LispVal] -> LispVal
-numAdd [] = Integer 0
-numAdd params = foldl1 (\x y -> add $ numCast x y) params
-  where add ((Integer a), (Integer b)) = Integer $ a + b
-        add ((Ratio   a), (Ratio   b)) = Ratio   $ a + b
-        add ((Float   a), (Float   b)) = Float   $ a + b
-        add ((Complex a), (Complex b)) = Complex $ a + b
-        add _ = error "Expected Number"
+add :: [LispVal] -> LispVal
+add [] = Integer 0
+add params = foldl1 (\x y -> add' $ numCast x y) params
+  where add' ((Integer a), (Integer b)) = Integer $ a + b
+        add' ((Ratio   a), (Ratio   b)) = Ratio   $ a + b
+        add' ((Float   a), (Float   b)) = Float   $ a + b
+        add' ((Complex a), (Complex b)) = Complex $ a + b
+        add' _ = error "Expected Number"
 
-numSub :: [LispVal] -> LispVal
-numSub [] = throw $ NumArgs 1 []
-numSub [Integer x] = Integer $ -x
-numSub [Ratio   x] = Ratio   $ -x
-numSub [Float   x] = Float   $ -x
-numSub [Complex x] = Complex $ -x
-numSub params = foldl1 (\x y -> sub $ numCast x y) params
+subtract :: [LispVal] -> LispVal
+subtract [] = throw $ NumArgs 1 []
+subtract [Integer x] = Integer $ -x
+subtract [Ratio   x] = Ratio   $ -x
+subtract [Float   x] = Float   $ -x
+subtract [Complex x] = Complex $ -x
+subtract params = foldl1 (\x y -> sub $ numCast x y) params
   where sub ((Integer a), (Integer b)) = Integer $ a - b
         sub ((Ratio   a), (Ratio   b)) = Ratio   $ a - b
         sub ((Float   a), (Float   b)) = Float   $ a - b
         sub ((Complex a), (Complex b)) = Complex $ a - b
         sub _ = error "Expected Number"
 
-numMul :: [LispVal] -> LispVal
-numMul [] = Integer 1
-numMul params = foldl1 (\x y -> mul $ numCast x y) params
+multiply :: [LispVal] -> LispVal
+multiply [] = Integer 1
+multiply params = foldl1 (\x y -> mul $ numCast x y) params
   where mul ((Integer a), (Integer b)) = Integer $ a * b
         mul ((Ratio   a), (Ratio   b)) = Ratio   $ a * b
         mul ((Float   a), (Float   b)) = Float   $ a * b
         mul ((Complex a), (Complex b)) = Complex $ a * b
         mul _ = error "Expected Number"
 
-numDiv :: [LispVal] -> LispVal
-numDiv [] = throw $ NumArgs 1 []
-numDiv [Integer x] = numDiv [Integer 1, Integer x]
-numDiv [Ratio   x] = numDiv [Integer 1, Ratio   x]
-numDiv [Float   x] = numDiv [Integer 1, Float   x]
-numDiv [Complex x] = numDiv [Integer 1, Complex x]
-numDiv params = foldl1 (\x y -> div' $ numCast x y) params
-  where div' ((Integer a), (Integer b))
+divide :: [LispVal] -> LispVal
+divide [] = throw $ NumArgs 1 []
+divide [Integer x] = divide [Integer 1, Integer x]
+divide [Ratio   x] = divide [Integer 1, Ratio   x]
+divide [Float   x] = divide [Integer 1, Float   x]
+divide [Complex x] = divide [Integer 1, Complex x]
+divide params = foldl1 (\x y -> div $ numCast x y) params
+  where div ((Integer a), (Integer b))
             | b           == 0 = err
-            | (a `mod` b) == 0 = Integer (a `div` b)
+            | (a `mod` b) == 0 = Integer (a `P.div` b)
             | otherwise        = Ratio (a % b)
-        div' ((Ratio a), (Ratio b))
+        div ((Ratio a), (Ratio b))
             | b == 0    = err
             | otherwise = Ratio (a / b)
-        div' ((Float a), (Float b))
+        div ((Float a), (Float b))
             | b == 0    = err
             | otherwise = Float (a / b)
-        div' ((Complex a), (Complex b))
+        div ((Complex a), (Complex b))
             | b == 0    = err
             | otherwise = Complex (a / b)
-        div' _ = error "Expected Number"
+        div _ = error "Expected Number"
         err = throw DivBy0

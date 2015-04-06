@@ -8,9 +8,9 @@ data LispVal = Atom String
              | DottedList [LispVal] LispVal
              | Vector [LispVal]
              | Integer Integer
-             | Real Float
+             | Real Double
              | Ratio Rational
-             | Complex (Complex Float)
+             | Complex (Complex Double)
              | String String
              | Char Char
              | Bool Bool

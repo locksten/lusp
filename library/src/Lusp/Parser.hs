@@ -94,11 +94,11 @@ parseRatio = do x <- many1 digit <* char '/'
 parseComplex :: Parser LispVal
 parseComplex = do x <- (try parseReal <|> parseInteger) <* char '+'
                   y <- (try parseReal <|> parseInteger) <* char 'i'
-                  return $ Complex (toFloat x :+ toFloat y)
-                    where toFloat :: LispVal -> Float
-                          toFloat (Real f)    = f
-                          toFloat (Integer n) = fromIntegral n
-                          toFloat _           = error "can't convert to float"
+                  return $ Complex (toDouble x :+ toDouble y)
+                    where toDouble :: LispVal -> Double
+                          toDouble (Real f)    = f
+                          toDouble (Integer n) = fromIntegral n
+                          toDouble _           = error "can't convert to double"
 
 parseHex :: Parser LispVal
 parseHex = (Integer . hexToDec) <$> many1 hexDigit

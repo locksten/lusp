@@ -8,7 +8,7 @@ data LispVal = Atom String
              | DottedList [LispVal] LispVal
              | Vector [LispVal]
              | Integer Integer
-             | Float Float
+             | Real Float
              | Ratio Rational
              | Complex (Complex Float)
              | String String
@@ -33,7 +33,7 @@ prettyPrint (DottedList xs end) = "( " ++ concatMap prettyPrint xs ++ ". " ++
                                   prettyPrint end ++ ") "
 prettyPrint (Atom x) = (init $ tail $ show x) ++ " "
 prettyPrint (Integer x) = show x ++ " "
-prettyPrint (Float x) = show x ++ " "
+prettyPrint (Real x) = show x ++ " "
 prettyPrint (Ratio x) = show (numerator x) ++ "/" ++ show (denominator x)
                         ++ " "
 prettyPrint (Complex x) = show (realPart x) ++ "+" ++ show (imagPart x) ++ " "

@@ -75,16 +75,16 @@ parseAtom = peculiar >>= (\x -> case x of
 parseNumber :: Parser LispVal
 parseNumber =  try parseRatio
            <|> try parseComplex
-           <|> try parseFloat
+           <|> try parseReal
            <|> parseInteger
 
 parseInteger :: Parser LispVal
 parseInteger = (Integer . read) <$> many1 digit
 
-parseFloat :: Parser LispVal
-parseFloat = do x <- many1 digit <* char '.'
-                y <- many1 digit
-                return . Float . fst . head $ readFloat (x ++ "." ++ y)
+parseReal :: Parser LispVal
+parseReal = do x <- many1 digit <* char '.'
+               y <- many1 digit
+               return . Real . fst . head $ readFloat (x ++ "." ++ y)
 
 parseRatio :: Parser LispVal
 parseRatio = do x <- many1 digit <* char '/'
@@ -92,11 +92,11 @@ parseRatio = do x <- many1 digit <* char '/'
                 return $ Ratio (read x % read y)
 
 parseComplex :: Parser LispVal
-parseComplex = do x <- (try parseFloat <|> parseInteger) <* char '+'
-                  y <- (try parseFloat <|> parseInteger) <* char 'i'
+parseComplex = do x <- (try parseReal <|> parseInteger) <* char '+'
+                  y <- (try parseReal <|> parseInteger) <* char 'i'
                   return $ Complex (toFloat x :+ toFloat y)
                     where toFloat :: LispVal -> Float
-                          toFloat (Float f)   = f
+                          toFloat (Real f)    = f
                           toFloat (Integer n) = fromIntegral n
                           toFloat _           = error "can't convert to float"
 

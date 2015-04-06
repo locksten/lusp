@@ -16,7 +16,7 @@ import Control.Exception (throw)
 eval :: LispVal -> LispVal
 eval v@(String _)  = v
 eval v@(Integer _) = v
-eval v@(Float _)   = v
+eval v@(Real _)    = v
 eval v@(Ratio _)   = v
 eval v@(Complex _) = v
 eval v@(Bool _)    = v

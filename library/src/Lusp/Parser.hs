@@ -1,7 +1,17 @@
 module Lusp.Parser (parse) where
 
 import Lusp.LispError (LispError(ParseError))
-import Lusp.LispVal (LispVal(..))
+import Lusp.LispVal (LispVal(List
+                            ,DottedList
+                            ,Atom
+                            ,Vector
+                            ,Integer
+                            ,Real
+                            ,Ratio
+                            ,Complex
+                            ,String
+                            ,Char
+                            ,Bool))
 
 import Text.ParserCombinators.Parsec hiding (parse)
 import qualified Text.ParserCombinators.Parsec as P (parse)

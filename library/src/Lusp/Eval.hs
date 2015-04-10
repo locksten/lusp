@@ -2,7 +2,15 @@ module Lusp.Eval (eval) where
 
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,NotFunction))
-import Lusp.LispVal (LispVal(..))
+import Lusp.LispVal (LispVal(List
+                            ,Atom
+                            ,String
+                            ,Integer
+                            ,Real
+                            ,Ratio
+                            ,Complex
+                            ,Bool
+                            ,Char))
 import qualified Lusp.Numeric as N (add
                                    ,subtract
                                    ,multiply

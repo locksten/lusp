@@ -1,5 +1,5 @@
 import Lusp.Eval (eval)
-import Lusp.Parser (parseExpressions)
+import Lusp.Parser (parse)
 
 import Control.Monad (when)
 import System.Environment (getArgs)
@@ -17,7 +17,7 @@ main = do
   where usage = "Usage: option string\noptions:\n-p  parse\n-e  evaluate"
 
 showParse :: String -> IO ()
-showParse = putStrLn . show . parseExpressions
+showParse = putStrLn . show . parse
 
 showEval :: String -> IO ()
-showEval = putStrLn . show . (map eval) . parseExpressions
+showEval = putStrLn . show . (map eval) . parse

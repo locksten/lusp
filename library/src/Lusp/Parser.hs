@@ -1,9 +1,10 @@
-module Lusp.Parser (parseExpressions) where
+module Lusp.Parser (parse) where
 
 import Lusp.LispError (LispError(ParseError))
 import Lusp.LispVal (LispVal(..))
 
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec hiding (parse)
+import qualified Text.ParserCombinators.Parsec as P (parse)
 
 import Control.Exception (throw)
 import Data.Char (toLower, digitToInt, isAlpha)
@@ -24,8 +25,8 @@ parseExpr =  spaces *>
          <|> parseListOrDottedList)
          <*  spaces
 
-parseExpressions :: String -> [LispVal]
-parseExpressions input = case parse (many parseExpr) "" input of
+parse :: String -> [LispVal]
+parse input = case P.parse (many parseExpr) "" input of
                            Left e -> throw $ ParseError e
                            Right val -> val
 

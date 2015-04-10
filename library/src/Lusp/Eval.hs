@@ -2,7 +2,9 @@ module Lusp.Eval (eval) where
 
 import Lusp.Environment (Env)
 import Lusp.LispError (LispError(BadSpecialForm
-                                ,NotFunction))
+                                ,NotFunction
+                                ,TypeMismatch
+                                ,Other))
 import Lusp.LispVal (LispVal(List
                             ,Atom
                             ,String
@@ -32,6 +34,22 @@ eval _   v@(Bool _)    = return v
 eval _   v@(Char _)    = return v
 eval env (Atom v)      = getVar env v
 eval _   (List [Atom "quote", v]) = return v
+eval env (List [Atom "if", predicate, consequnce, alternative]) =
+        eval env predicate >>= \res ->
+           case res of
+             Bool True  -> eval env consequnce
+             Bool False -> eval env alternative
+             badType    -> throw $ TypeMismatch "bool" badType
+eval env (List [Atom "if", predicate, consequnce]) =
+        eval env predicate >>= \res ->
+           case res of
+             Bool True  -> eval env consequnce
+             Bool False -> throw $ Other "False if without alternative"
+             badType    -> throw $ TypeMismatch "bool" badType
+eval env (List [Atom "set!", Atom var, form]) = eval env form
+        >>= setVar env var
+eval env (List [Atom "define", Atom var, form]) = eval env form
+        >>= defineVar env var
 eval env (List (Atom func:args)) = apply func <$> mapM (eval env) args
 eval _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
 

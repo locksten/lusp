@@ -1,5 +1,6 @@
 module Lusp.Eval (eval) where
 
+import Lusp.Environment (Env)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,NotFunction))
 import Lusp.LispVal (LispVal(List
@@ -21,17 +22,18 @@ import qualified Lusp.Numeric as N (add
 
 import Control.Exception (throw)
 
-eval :: LispVal -> LispVal
-eval v@(String _)  = v
-eval v@(Integer _) = v
-eval v@(Real _)    = v
-eval v@(Ratio _)   = v
-eval v@(Complex _) = v
-eval v@(Bool _)    = v
-eval v@(Char _)    = v
-eval (List [Atom "quote", v]) = v
-eval (List (Atom func:args)) = apply func $ map eval args
-eval badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
+eval :: Env -> LispVal -> IO LispVal
+eval _   v@(String _)  = return v
+eval _   v@(Integer _) = return v
+eval _   v@(Real _)    = return v
+eval _   v@(Ratio _)   = return v
+eval _   v@(Complex _) = return v
+eval _   v@(Bool _)    = return v
+eval _   v@(Char _)    = return v
+eval env (Atom v)      = getVar env v
+eval _   (List [Atom "quote", v]) = return v
+eval env (List (Atom func:args)) = apply func <$> mapM (eval env) args
+eval _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
 
 apply :: String -> [LispVal] -> LispVal
 apply func args = maybe (throw $

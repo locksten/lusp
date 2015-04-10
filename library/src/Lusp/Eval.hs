@@ -1,6 +1,6 @@
-module Lusp.Eval (eval) where
+module Lusp.Eval (evaluate) where
 
-import Lusp.Environment (Env)
+import Lusp.Environment (Env, emptyEnv, getVar, setVar, defineVar)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,NotFunction
                                 ,TypeMismatch
@@ -23,6 +23,9 @@ import qualified Lusp.Numeric as N (add
                                    ,quotient)
 
 import Control.Exception (throw)
+
+evaluate :: [LispVal] -> IO [LispVal]
+evaluate vals = emptyEnv >>= \env -> mapM (eval env) vals
 
 eval :: Env -> LispVal -> IO LispVal
 eval _   v@(String _)  = return v

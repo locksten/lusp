@@ -1,4 +1,4 @@
-import Lusp.Eval (eval)
+import Lusp.Eval (evaluate)
 import Lusp.Parser (parse)
 
 import Control.Monad (when)
@@ -20,4 +20,4 @@ showParse :: String -> IO ()
 showParse = putStrLn . show . parse
 
 showEval :: String -> IO ()
-showEval = putStrLn . show . (map eval) . parse
+showEval = (putStrLn . show =<<) . evaluate . parse

@@ -14,6 +14,7 @@ data LispVal = Atom String
              | String String
              | Char Char
              | Bool Bool
+             | Void
 instance Show LispVal where show = prettyPrint
 
 prettyPrintList :: (LispVal, Int) -> String
@@ -40,3 +41,4 @@ prettyPrint (Complex x) = show (realPart x) ++ "+" ++ show (imagPart x) ++ " "
 prettyPrint (String x) = show x ++ " "
 prettyPrint (Char x) = "#\\" ++ init (tail $ show x) ++ " "
 prettyPrint (Bool x) = if x then "#t " else "#f "
+prettyPrint (Void) = "#void "

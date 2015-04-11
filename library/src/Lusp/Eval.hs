@@ -1,6 +1,6 @@
 module Lusp.Eval (evaluate) where
 
-import Lusp.Environment (emptyEnv, getVar, setVar, defineVar)
+import Lusp.Environment (emptyEnv, getVar, setVar, defineVar, bindVars)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,NotFunction
                                 ,TypeMismatch
@@ -14,6 +14,8 @@ import Lusp.LispVal (LispVal(List
                             ,Complex
                             ,Bool
                             ,Char)
+                            ,PrimitiveFunc
+                    ,isVoid
                     ,Env)
 import qualified Lusp.Numeric as N (add
                                    ,subtract
@@ -24,9 +26,11 @@ import qualified Lusp.Numeric as N (add
                                    ,quotient)
 
 import Control.Exception (throw)
+import Control.Monad (liftM)
 
 evaluate :: [LispVal] -> IO [LispVal]
-evaluate vals = emptyEnv >>= \env -> mapM (eval env) vals
+evaluate vals = filter (not . isVoid) <$>
+    (flip mapM vals . eval =<< primitiveEnv)
 
 eval :: Env -> LispVal -> IO LispVal
 eval _   v@(String _)  = return v
@@ -70,3 +74,7 @@ primitives = [("+", N.add)
              ,("modulo", N.modulo)
              ,("remainder", N.remainder)
              ,("quotient", N.quotient)]
+
+primitiveEnv :: IO Env
+primitiveEnv = emptyEnv >>= (flip bindVars $ map makePrimitiveFunc primitives)
+     where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)

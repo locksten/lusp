@@ -1,4 +1,5 @@
 module Lusp.LispVal (LispVal(..)
+                    ,isVoid
                     ,Env) where
 
 import Data.Complex (Complex, realPart, imagPart)
@@ -40,3 +41,6 @@ showLispVal (Void)      = "#void"
 showLispVal (PrimitiveFunc _) = "<primitive>"
 showLispVal (Func _ _ _ _)    = "<function>"
 
+isVoid :: LispVal -> Bool
+isVoid Void = True
+isVoid _ = False

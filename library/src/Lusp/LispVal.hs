@@ -17,6 +17,8 @@ data LispVal = Atom String
              | Char Char
              | Bool Bool
              | Void
+             | PrimitiveFunc ([LispVal] -> LispVal)
+             | Func [String] (Maybe String) [LispVal] Env
 instance Show LispVal where show = prettyPrint
 
 type Env = IORef [(String, IORef LispVal)]
@@ -46,3 +48,8 @@ prettyPrint (String x) = show x ++ " "
 prettyPrint (Char x) = "#\\" ++ init (tail $ show x) ++ " "
 prettyPrint (Bool x) = if x then "#t " else "#f "
 prettyPrint (Void) = "#void "
+prettyPrint (PrimitiveFunc _) = "<primitive> "
+prettyPrint (Func args varargs _ _) = "(lambda (" ++ unwords (map show args) ++
+    (case varargs of
+        Nothing -> ""
+        Just arg -> " . " ++ arg) ++ ") ...) "

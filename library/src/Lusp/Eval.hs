@@ -2,10 +2,11 @@ module Lusp.Eval (evaluate) where
 
 import Lusp.Environment (emptyEnv, getVar, setVar, defineVar, bindVars)
 import Lusp.LispError (LispError(BadSpecialForm
-                                ,NotFunction
                                 ,TypeMismatch
+                                ,NumArgs
                                 ,Other))
 import Lusp.LispVal (LispVal(List
+                            ,DottedList
                             ,Atom
                             ,String
                             ,Integer
@@ -13,8 +14,9 @@ import Lusp.LispVal (LispVal(List
                             ,Ratio
                             ,Complex
                             ,Bool
-                            ,Char)
+                            ,Char
                             ,PrimitiveFunc
+                            ,Func)
                     ,isVoid
                     ,Env)
 import qualified Lusp.Numeric as N (add
@@ -58,13 +60,34 @@ eval env (List [Atom "set!", Atom var, form]) = eval env form
         >>= setVar env var
 eval env (List [Atom "define", Atom var, form]) = eval env form
         >>= defineVar env var
-eval env (List (Atom func:args)) = apply func <$> mapM (eval env) args
+eval env (List (Atom "define" : List (Atom var : params) : body)) =
+     makeNormalFunc env params body >>= defineVar env var
+eval env (List (Atom "define" : DottedList (Atom var : params)varargs : body)) =
+     makeVarArgFunc varargs env params body >>= defineVar env var
+eval env (List (Atom "lambda" : List params : body)) =
+     makeNormalFunc env params body
+eval env (List (Atom "lambda" : DottedList params varargs : body)) =
+     makeVarArgFunc varargs env params body
+eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
+     makeVarArgFunc varargs env [] body
+eval env (List (func : args)) = eval env func >>=
+    (mapM (eval env) args >>=) . apply
 eval _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
 
-apply :: String -> [LispVal] -> LispVal
-apply func args = maybe (throw $
-                  NotFunction "Unrecognized primitive function" func)
-                  ($ args) $ lookup func primitives
+apply :: LispVal -> [LispVal] -> IO LispVal
+apply (PrimitiveFunc f) args = return (f args)
+apply (Func params varargs body closure) args =
+    if num params /= num args && varargs == Nothing
+       then throw $ NumArgs (num params) args
+       else (bindVars closure $ zip params args) >>=
+           bindVarArgs varargs >>= evalBody
+  where remainingArgs = drop (length params) args
+        num = toInteger . length
+        evalBody env = liftM last $ mapM (eval env) body
+        bindVarArgs arg env = case arg of
+            Just argName -> bindVars env [(argName, List $ remainingArgs)]
+            Nothing -> return env
+apply badType _ = throw $ TypeMismatch "function" badType
 
 primitives :: [(String, ([LispVal] -> LispVal))]
 primitives = [("+", N.add)
@@ -78,3 +101,13 @@ primitives = [("+", N.add)
 primitiveEnv :: IO Env
 primitiveEnv = emptyEnv >>= (flip bindVars $ map makePrimitiveFunc primitives)
      where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
+
+makeFunc :: Maybe String -> Env -> [LispVal] -> [LispVal] -> IO LispVal
+makeFunc varargs env params body = return $
+    Func (map show params) varargs body env
+
+makeNormalFunc :: Env -> [LispVal] -> [LispVal] -> IO LispVal
+makeNormalFunc = makeFunc Nothing
+
+makeVarArgFunc :: LispVal -> Env -> [LispVal] -> [LispVal] -> IO LispVal
+makeVarArgFunc = makeFunc . Just . show

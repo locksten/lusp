@@ -19,37 +19,24 @@ data LispVal = Atom String
              | Void
              | PrimitiveFunc ([LispVal] -> LispVal)
              | Func [String] (Maybe String) [LispVal] Env
-instance Show LispVal where show = prettyPrint
+instance Show LispVal where show = showLispVal
 
 type Env = IORef [(String, IORef LispVal)]
 
-prettyPrintList :: (LispVal, Int) -> String
-prettyPrintList (xs, depth) = case xs of
-    (List ys) -> indent depth ++ "( " ++ concatMap iteration ys ++ ") "
-      where iteration ts = prettyPrintList (ts, depth + 1)
-            indent d = if d == 0 then "" else "\n" ++ concat
-                (replicate (d * prettyPrintIndentLevel) " ")
-            prettyPrintIndentLevel :: Int
-            prettyPrintIndentLevel = 4
-    _         -> prettyPrint xs
+showLispVal :: LispVal -> String
+showLispVal (List xs)   =  concatMap ((++ " ") . show) xs
+showLispVal (Vector xs) = "#" ++ show (List xs)
+showLispVal (DottedList xs end) = "(" ++ (tail . init . show) (List xs) ++
+    " . " ++ show end ++ ")"
+showLispVal (Atom x)    = x
+showLispVal (Integer x) = show x
+showLispVal (Real x)    = show x
+showLispVal (Ratio x)   = show (numerator x) ++ "/" ++ show (denominator x)
+showLispVal (Complex x) = show (realPart x) ++ "+" ++ show (imagPart x) ++ "i"
+showLispVal (String x)  = show x
+showLispVal (Char x)    = show x
+showLispVal (Bool x)    = if x then "#t" else "#f"
+showLispVal (Void)      = "#void"
+showLispVal (PrimitiveFunc _) = "<primitive>"
+showLispVal (Func _ _ _ _)    = "<function>"
 
-prettyPrint :: LispVal -> String
-prettyPrint (List xs) = prettyPrintList (List xs, 0)
-prettyPrint (Vector xs) = "#" ++ prettyPrintList (List xs, 0)
-prettyPrint (DottedList xs end) = "( " ++ concatMap prettyPrint xs ++ ". " ++
-                                  prettyPrint end ++ ") "
-prettyPrint (Atom x) = (init $ tail $ show x) ++ " "
-prettyPrint (Integer x) = show x ++ " "
-prettyPrint (Real x) = show x ++ " "
-prettyPrint (Ratio x) = show (numerator x) ++ "/" ++ show (denominator x)
-                        ++ " "
-prettyPrint (Complex x) = show (realPart x) ++ "+" ++ show (imagPart x) ++ " "
-prettyPrint (String x) = show x ++ " "
-prettyPrint (Char x) = "#\\" ++ init (tail $ show x) ++ " "
-prettyPrint (Bool x) = if x then "#t " else "#f "
-prettyPrint (Void) = "#void "
-prettyPrint (PrimitiveFunc _) = "<primitive> "
-prettyPrint (Func args varargs _ _) = "(lambda (" ++ unwords (map show args) ++
-    (case varargs of
-        Nothing -> ""
-        Just arg -> " . " ++ arg) ++ ") ...) "

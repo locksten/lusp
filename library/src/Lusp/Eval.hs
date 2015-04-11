@@ -1,6 +1,6 @@
 module Lusp.Eval (evaluate) where
 
-import Lusp.Environment (Env, emptyEnv, getVar, setVar, defineVar)
+import Lusp.Environment (emptyEnv, getVar, setVar, defineVar)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,NotFunction
                                 ,TypeMismatch
@@ -13,7 +13,8 @@ import Lusp.LispVal (LispVal(List
                             ,Ratio
                             ,Complex
                             ,Bool
-                            ,Char))
+                            ,Char)
+                    ,Env)
 import qualified Lusp.Numeric as N (add
                                    ,subtract
                                    ,multiply

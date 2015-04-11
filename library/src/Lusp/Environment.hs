@@ -1,16 +1,14 @@
-module Lusp.Environment (Env
-                        ,emptyEnv
+module Lusp.Environment (emptyEnv
                         ,getVar
                         ,setVar
                         ,defineVar) where
 
 import Lusp.LispError (LispError(UnboundVar))
-import Lusp.LispVal (LispVal(Void))
+import Lusp.LispVal (LispVal(Void)
+                    ,Env)
 
 import Control.Exception (throw)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-
-type Env = IORef [(String, IORef LispVal)]
+import Data.IORef (newIORef, readIORef, writeIORef)
 
 emptyEnv :: IO Env
 emptyEnv = newIORef []

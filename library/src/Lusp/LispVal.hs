@@ -1,6 +1,8 @@
-module Lusp.LispVal (LispVal(..)) where
+module Lusp.LispVal (LispVal(..)
+                    ,Env) where
 
 import Data.Complex (Complex, realPart, imagPart)
+import Data.IORef (IORef)
 import Data.Ratio (numerator, denominator)
 
 data LispVal = Atom String
@@ -16,6 +18,8 @@ data LispVal = Atom String
              | Bool Bool
              | Void
 instance Show LispVal where show = prettyPrint
+
+type Env = IORef [(String, IORef LispVal)]
 
 prettyPrintList :: (LispVal, Int) -> String
 prettyPrintList (xs, depth) = case xs of

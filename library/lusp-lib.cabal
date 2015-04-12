@@ -10,7 +10,7 @@ maintainer:          locksten@users.noreply.github.com
 -- category:
 build-type:          Simple
 -- extra-source-files:
-cabal-version:       >=1.10
+cabal-version:       >= 1.10
 
 library
   exposed-modules:   Lusp.Evaluate

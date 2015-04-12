@@ -6,7 +6,7 @@ import Text.Parsec.Error (ParseError)
 
 import Control.Exception (Exception)
 
-data LispError = NumArgs Integer [LispVal]
+data LispError = NumArgs [Integer] [LispVal]
                | TypeMismatch String LispVal
                | ParseError ParseError
                | BadSpecialForm String LispVal

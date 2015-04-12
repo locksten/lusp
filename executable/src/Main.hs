@@ -1,4 +1,4 @@
-import Lusp.Eval (evaluate)
+import Lusp.Evaluate (evaluate)
 import Lusp.Parser (parse)
 
 import Control.Monad (when)

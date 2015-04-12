@@ -1,6 +1,9 @@
-module Lusp.Eval (evaluate) where
+module Lusp.Eval (eval, apply) where
 
-import Lusp.Environment (emptyEnv, getVar, setVar, defineVar, bindVars)
+import Lusp.Environment (getVar
+                        ,setVar
+                        ,defineVar
+                        ,bindVars)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,TypeMismatch
                                 ,NumArgs
@@ -16,23 +19,13 @@ import Lusp.LispVal (LispVal(List
                             ,Bool
                             ,Char
                             ,PrimitiveFunc
+                            ,IOFunc
                             ,Func)
-                    ,isVoid
                     ,Env)
-import qualified Lusp.Numeric as N (add
-                                   ,subtract
-                                   ,multiply
-                                   ,divide
-                                   ,modulo
-                                   ,remainder
-                                   ,quotient)
+import Lusp.Parser (parse)
 
 import Control.Exception (throw)
 import Control.Monad (liftM)
-
-evaluate :: [LispVal] -> IO [LispVal]
-evaluate vals = filter (not . isVoid) <$>
-    (flip mapM vals . eval =<< primitiveEnv)
 
 eval :: Env -> LispVal -> IO LispVal
 eval _   v@(String _)  = return v
@@ -44,6 +37,8 @@ eval _   v@(Bool _)    = return v
 eval _   v@(Char _)    = return v
 eval env (Atom v)      = getVar env v
 eval _   (List [Atom "quote", v]) = return v
+eval env (List [Atom "load", String filename]) =
+    (last <$>) . mapM (eval env) =<< parse <$> readFile filename
 eval env (List [Atom "if", predicate, consequnce, alternative]) =
         eval env predicate >>= \res ->
            case res of
@@ -76,9 +71,10 @@ eval _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
 
 apply :: LispVal -> [LispVal] -> IO LispVal
 apply (PrimitiveFunc f) args = return (f args)
+apply (IOFunc f) args = f args
 apply (Func params varargs body closure) args =
     if num params /= num args && varargs == Nothing
-       then throw $ NumArgs (num params) args
+       then throw $ NumArgs [num params] args
        else (bindVars closure $ zip params args) >>=
            bindVarArgs varargs >>= evalBody
   where remainingArgs = drop (length params) args
@@ -88,19 +84,6 @@ apply (Func params varargs body closure) args =
             Just argName -> bindVars env [(argName, List $ remainingArgs)]
             Nothing -> return env
 apply badType _ = throw $ TypeMismatch "function" badType
-
-primitives :: [(String, ([LispVal] -> LispVal))]
-primitives = [("+", N.add)
-             ,("-", N.subtract)
-             ,("*", N.multiply)
-             ,("/", N.divide)
-             ,("modulo", N.modulo)
-             ,("remainder", N.remainder)
-             ,("quotient", N.quotient)]
-
-primitiveEnv :: IO Env
-primitiveEnv = emptyEnv >>= (flip bindVars $ map makePrimitiveFunc primitives)
-     where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
 
 makeFunc :: Maybe String -> Env -> [LispVal] -> [LispVal] -> IO LispVal
 makeFunc varargs env params body = return $

@@ -19,6 +19,8 @@ library
                      ,Lusp.LispVal
                      ,Lusp.Numeric
                      ,Lusp.Parser
+                     ,Lusp.Primitives
+                     ,Lusp.Evaluate
 -- other-modules:
 -- other-extensions:
   build-depends:     base == 4.8.*

@@ -5,6 +5,7 @@ module Lusp.LispVal (LispVal(..)
 import Data.Complex (Complex, realPart, imagPart)
 import Data.IORef (IORef)
 import Data.Ratio (numerator, denominator)
+import System.IO (Handle)
 
 data LispVal = Atom String
              | List [LispVal]
@@ -19,13 +20,16 @@ data LispVal = Atom String
              | Bool Bool
              | Void
              | PrimitiveFunc ([LispVal] -> LispVal)
+             | IOFunc ([LispVal] -> IO LispVal)
              | Func [String] (Maybe String) [LispVal] Env
+             | Port Handle
 instance Show LispVal where show = showLispVal
 
 type Env = IORef [(String, IORef LispVal)]
 
 showLispVal :: LispVal -> String
-showLispVal (List xs)   =  concatMap ((++ " ") . show) xs
+showLispVal (List (x:xs)) = "(" ++ show x ++ concatMap ((" " ++) . show) xs
+    ++ ")"
 showLispVal (Vector xs) = "#" ++ show (List xs)
 showLispVal (DottedList xs end) = "(" ++ (tail . init . show) (List xs) ++
     " . " ++ show end ++ ")"
@@ -39,7 +43,9 @@ showLispVal (Char x)    = show x
 showLispVal (Bool x)    = if x then "#t" else "#f"
 showLispVal (Void)      = "#void"
 showLispVal (PrimitiveFunc _) = "<primitive>"
+showLispVal (IOFunc _)        = "<IO primitive>"
 showLispVal (Func _ _ _ _)    = "<function>"
+showLispVal (Port _)          = "<IO port>"
 
 isVoid :: LispVal -> Bool
 isVoid Void = True

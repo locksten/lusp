@@ -13,15 +13,16 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:    Lusp.Environment
-                     ,Lusp.Eval
-                     ,Lusp.LispError
-                     ,Lusp.LispVal
-                     ,Lusp.Numeric
-                     ,Lusp.Parser
-                     ,Lusp.Primitives
-                     ,Lusp.Evaluate
--- other-modules:
+  exposed-modules:   Lusp.Evaluate
+                    ,Lusp.Parser
+
+  other-modules:     Lusp.Environment
+                    ,Lusp.Primitives
+                    ,Lusp.Eval
+                    ,Lusp.LispError
+                    ,Lusp.LispVal
+                    ,Lusp.Numeric
+
 -- other-extensions:
   build-depends:     base == 4.8.*
                     ,parsec == 3.1.*

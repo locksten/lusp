@@ -24,8 +24,8 @@ import Data.Ratio ((%))
 import Numeric (readFloat, readHex, readOct)
 
 parseExpr :: Parser LispVal
-parseExpr =  spaces *>
-            (parseAtom
+parseExpr =  ignored
+         *> (parseAtom
          <|> parseStartingWithOctothorpe
          <|> parseString
          <|> parseNumber
@@ -33,7 +33,8 @@ parseExpr =  spaces *>
          <|> parseQuasiQuoted
          <|> parseUnQuote
          <|> parseListOrDottedList)
-         <*  spaces
+         <*  ignored
+  where ignored = spaces *> skipMany comment *> spaces
 
 parse :: String -> [LispVal]
 parse input = case P.parse (many parseExpr) "" input of
@@ -155,3 +156,7 @@ parseQuasiQuoted = (\x -> List [Atom "quasiquote", x]) <$>
 
 parseUnQuote :: Parser LispVal
 parseUnQuote = (\x -> List [Atom "unquote", x]) <$> (char ',' *> parseExpr)
+
+comment :: Parser ()
+comment = char ';' *> manyTill anyChar (((many1 newline) *> return ()) <|> eof)
+    *> return ()

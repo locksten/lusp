@@ -2,9 +2,8 @@ module Lusp.LispError (LispError(..)) where
 
 import Lusp.LispVal (LispVal)
 
-import Text.Parsec.Error (ParseError)
-
 import Control.Exception (Exception)
+import Text.Parsec.Error (ParseError)
 
 data LispError = NumArgs [Integer] [LispVal]
                | TypeMismatch String LispVal

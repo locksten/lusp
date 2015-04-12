@@ -30,6 +30,8 @@ type Env = IORef [(String, IORef LispVal)]
 showLispVal :: LispVal -> String
 showLispVal (List (x:xs)) = "(" ++ show x ++ concatMap ((" " ++) . show) xs
     ++ ")"
+showLispVal (List [x])  = "(" ++ show x ++ ")"
+showLispVal (List [])   = "()"
 showLispVal (Vector xs) = "#" ++ show (List xs)
 showLispVal (DottedList xs end) = "(" ++ (tail . init . show) (List xs) ++
     " . " ++ show end ++ ")"
@@ -44,7 +46,7 @@ showLispVal (Bool x)    = if x then "#t" else "#f"
 showLispVal (Void)      = "#void"
 showLispVal (PrimitiveFunc _) = "<primitive>"
 showLispVal (IOFunc _)        = "<IO primitive>"
-showLispVal (Func _ _ _ _)    = "<function>"
+showLispVal (Func {})         = "<function>"
 showLispVal (Port _)          = "<IO port>"
 
 isVoid :: LispVal -> Bool

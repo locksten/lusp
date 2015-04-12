@@ -19,7 +19,7 @@ import qualified Text.ParserCombinators.Parsec as P (parse)
 import Control.Exception (throw)
 import Data.Char (toLower, digitToInt, isAlpha)
 import Data.Complex (Complex((:+)))
-import Data.List (findIndices)
+import Data.List (elemIndices)
 import Data.Ratio ((%))
 import Numeric (readFloat, readHex, readOct)
 
@@ -113,15 +113,15 @@ parseComplex = do x <- (try parseReal <|> parseInteger) <* char '+'
 
 parseHex :: Parser LispVal
 parseHex = (Integer . hexToDec) <$> many1 hexDigit
-  where hexToDec x = fst $ readHex x !! 0
+  where hexToDec = fst . head . readHex
 
 parseOct :: Parser LispVal
 parseOct = (Integer . octToDec) <$> many1 octDigit
-  where octToDec x = fst $ readOct x !! 0
+  where octToDec = fst . head . readOct
 
 parseBin :: Parser LispVal
 parseBin = (Integer . binToDec . map digitToInt) <$> many1 (oneOf "01")
-  where binToDec x = sum $ map (2^) $ findIndices (==1) $ reverse x
+  where binToDec = sum . map (2^) . elemIndices 1 . reverse
 
 parseString :: Parser LispVal
 parseString = String <$> between (char '"') (char '"') (many chars)

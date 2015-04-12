@@ -5,6 +5,7 @@ import Lusp.LispVal (LispVal
                     ,isVoid)
 import Lusp.Primitives (primitiveEnv)
 
+import Control.Monad (forM)
+
 evaluate :: [LispVal] -> IO [LispVal]
-evaluate vals = filter (not . isVoid) <$>
-    (flip mapM vals . eval =<< primitiveEnv)
+evaluate vals = filter (not . isVoid) <$> (forM vals . eval =<< primitiveEnv)

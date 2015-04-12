@@ -40,11 +40,11 @@ import System.IO (IOMode(ReadMode
                  ,stdout)
 
 primitiveEnv :: IO Env
-primitiveEnv = emptyEnv >>= (flip bindVars $ map (makeF IOFunc) ioPrimitives ++
+primitiveEnv = emptyEnv >>= flip bindVars (map (makeF IOFunc) ioPrimitives ++
     map (makeF PrimitiveFunc) primitives)
   where makeF cons (var, func) = (var, cons func)
 
-primitives :: [(String, ([LispVal] -> LispVal))]
+primitives :: [(String, [LispVal] -> LispVal)]
 primitives = [("+", N.add)
              ,("-", N.subtract)
              ,("*", N.multiply)
@@ -55,7 +55,7 @@ primitives = [("+", N.add)
              ,("current-input-port", argumentless $ Port stdin)
              ,("current-output-port", argumentless $ Port stdout)]
 
-ioPrimitives :: [(String, ([LispVal] -> IO LispVal))]
+ioPrimitives :: [(String, [LispVal] -> IO LispVal)]
 ioPrimitives = [("open-input-file", makePort ReadMode)
                ,("open-output-file", makePort WriteMode)
                ,("close-input-port", closePort)
@@ -75,7 +75,7 @@ makePort mode [String filename] = Port <$> openFile filename mode
 makePort _ x                    = throw $ NumArgs [1] x
 
 closePort :: [LispVal] -> IO LispVal
-closePort [Port port] = hClose port >> (return $ Void)
+closePort [Port port] = hClose port >> return Void
 closePort _           = return Void
 
 read :: [LispVal] -> IO LispVal
@@ -86,7 +86,7 @@ read x           = throw $ NumArgs [1, 2] x
 
 write :: [LispVal] -> IO LispVal
 write [obj]            = write [obj, Port stdout]
-write [obj, Port port] = hPrint port obj >> (return $ Void)
+write [obj, Port port] = hPrint port obj >> return Void
 write [_, x]           = throw $ TypeMismatch "<IO port>" x
 write x                = throw $ NumArgs [1, 2] x
 

@@ -9,19 +9,18 @@ module Lusp.Numeric (add
 import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
                                 ,DivBy0))
-
 import Lusp.LispVal (LispVal(Integer
                             ,Ratio
                             ,Real
                             ,Complex))
 
-import Control.Exception (throw)
-import Data.Complex (Complex((:+)))
-import Data.Ratio ((%), numerator, denominator)
-
 import Prelude hiding (div
                       ,subtract)
 import qualified Prelude as P (div)
+
+import Control.Exception (throw)
+import Data.Complex (Complex((:+)))
+import Data.Ratio ((%), numerator, denominator)
 
 numCast :: LispVal -> LispVal -> (LispVal, LispVal)
 numCast a@(Integer _) b@(Integer _) = (a, b)
@@ -49,17 +48,17 @@ numCast a b = case a of
   where err notNum = throw $ TypeMismatch "number" notNum
 
 ratioToComplex :: LispVal -> LispVal
-ratioToComplex (Ratio x) = Complex $ (fromInteger $ numerator x)
-                                   / (fromInteger $ denominator x)
+ratioToComplex (Ratio x) = Complex $ fromInteger (numerator x)
+                                   / fromInteger (denominator x)
 ratioToComplex _ = error "Expected Ratio"
 
 add :: [LispVal] -> LispVal
 add [] = Integer 0
 add params = foldl1 (\x y -> add' $ numCast x y) params
-  where add' ((Integer a), (Integer b)) = Integer $ a + b
-        add' ((Ratio   a), (Ratio   b)) = Ratio   $ a + b
-        add' ((Real    a), (Real    b)) = Real    $ a + b
-        add' ((Complex a), (Complex b)) = Complex $ a + b
+  where add' (Integer a, Integer b) = Integer $ a + b
+        add' (Ratio   a, Ratio   b) = Ratio   $ a + b
+        add' (Real    a, Real    b) = Real    $ a + b
+        add' (Complex a, Complex b) = Complex $ a + b
         add' _ = error "Expected Number"
 
 subtract :: [LispVal] -> LispVal
@@ -69,19 +68,19 @@ subtract [Ratio   x] = Ratio   $ -x
 subtract [Real    x] = Real    $ -x
 subtract [Complex x] = Complex $ -x
 subtract params = foldl1 (\x y -> sub $ numCast x y) params
-  where sub ((Integer a), (Integer b)) = Integer $ a - b
-        sub ((Ratio   a), (Ratio   b)) = Ratio   $ a - b
-        sub ((Real    a), (Real    b)) = Real    $ a - b
-        sub ((Complex a), (Complex b)) = Complex $ a - b
+  where sub (Integer a, Integer b) = Integer $ a - b
+        sub (Ratio   a, Ratio   b) = Ratio   $ a - b
+        sub (Real    a, Real    b) = Real    $ a - b
+        sub (Complex a, Complex b) = Complex $ a - b
         sub _ = error "Expected Number"
 
 multiply :: [LispVal] -> LispVal
 multiply [] = Integer 1
 multiply params = foldl1 (\x y -> mul $ numCast x y) params
-  where mul ((Integer a), (Integer b)) = Integer $ a * b
-        mul ((Ratio   a), (Ratio   b)) = Ratio   $ a * b
-        mul ((Real    a), (Real    b)) = Real    $ a * b
-        mul ((Complex a), (Complex b)) = Complex $ a * b
+  where mul (Integer a, Integer b) = Integer $ a * b
+        mul (Ratio   a, Ratio   b) = Ratio   $ a * b
+        mul (Real    a, Real    b) = Real    $ a * b
+        mul (Complex a, Complex b) = Complex $ a * b
         mul _ = error "Expected Number"
 
 divide :: [LispVal] -> LispVal
@@ -91,17 +90,17 @@ divide [Ratio   x] = divide [Integer 1, Ratio   x]
 divide [Real    x] = divide [Integer 1, Real    x]
 divide [Complex x] = divide [Integer 1, Complex x]
 divide params = foldl1 (\x y -> div $ numCast x y) params
-  where div ((Integer a), (Integer b))
+  where div (Integer a, Integer b)
             | b           == 0 = err
             | (a `mod` b) == 0 = Integer (a `P.div` b)
             | otherwise        = Ratio (a % b)
-        div ((Ratio a), (Ratio b))
+        div (Ratio a, Ratio b)
             | b == 0    = err
             | otherwise = Ratio (a / b)
-        div ((Real a), (Real b))
+        div (Real a, Real b)
             | b == 0    = err
             | otherwise = Real (a / b)
-        div ((Complex a), (Complex b))
+        div (Complex a, Complex b)
             | b == 0    = err
             | otherwise = Complex (a / b)
         div _ = error "Expected Number"
@@ -117,8 +116,8 @@ quotient :: [LispVal] -> LispVal
 quotient xs = integerBinDivOp xs quot
 
 integerBinDivOp :: [LispVal] -> (Integer -> Integer -> Integer) -> LispVal
-integerBinDivOp [(Integer _), (Integer 0)] _ = throw DivBy0
-integerBinDivOp [(Integer a), (Integer b)] op = Integer (a `op` b)
-integerBinDivOp [(Integer _), x] _ = throw $ TypeMismatch "integer" x
-integerBinDivOp [x, (Integer _)] _ = throw $ TypeMismatch "integer" x
-integerBinDivOp xs _ = throw $ NumArgs [2] xs
+integerBinDivOp [Integer _, Integer 0] _  = throw DivBy0
+integerBinDivOp [Integer a, Integer b] op = Integer (a `op` b)
+integerBinDivOp [Integer _, x] _          = throw $ TypeMismatch "integer" x
+integerBinDivOp [x, Integer _] _        = throw $ TypeMismatch "integer" x
+integerBinDivOp xs _                      = throw $ NumArgs [2] xs

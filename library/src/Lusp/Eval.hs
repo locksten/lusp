@@ -64,6 +64,8 @@ eval env (List (Atom "lambda" : DottedList params varargs : body)) =
     makeVarArgFunc varargs env params body
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
     makeVarArgFunc varargs env [] body
+eval env (List (Atom "begin" : expressions)) =
+    last <$> mapM (eval env) expressions
 eval env (List (func : args)) = eval env func >>=
     (mapM (eval env) args >>=) . apply
 eval _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm

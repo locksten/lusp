@@ -17,7 +17,8 @@ main = do
   where usage = "Usage: option string\noptions:\n-p  parse\n-e  evaluate"
 
 showParse :: String -> IO ()
-showParse = putStrLn . show . parse
+showParse = print . parse
 
 showEval :: String -> IO ()
-showEval = (putStrLn . show =<<) . evaluate . parse
+showEval = (print' =<<) . evaluate . parse
+  where print' = putStrLn . concatMap ((++ "  ") . show)

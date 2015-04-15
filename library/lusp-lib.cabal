@@ -22,6 +22,7 @@ library
                     ,Lusp.LispError
                     ,Lusp.LispVal
                     ,Lusp.Numeric
+                    ,Lusp.LispValUtils
 
 -- other-extensions:
   build-depends:     base == 4.8.*

@@ -1,8 +1,8 @@
 module Lusp.Evaluate (evaluate) where
 
 import Lusp.Eval (eval)
-import Lusp.LispVal (LispVal
-                    ,isVoid)
+import Lusp.LispVal (LispVal)
+import Lusp.LispValUtils (isVoid)
 import Lusp.Primitives (primitiveEnv)
 
 import Control.Monad (forM)

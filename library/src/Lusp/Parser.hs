@@ -1,4 +1,5 @@
-module Lusp.Parser (parse) where
+module Lusp.Parser (parse
+                   ,parseString) where
 
 import Lusp.LispError (LispError(ParseError))
 import Lusp.LispVal (LispVal(List

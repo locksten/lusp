@@ -21,7 +21,8 @@ import Lusp.LispVal (LispVal(List
                             ,Char
                             ,PrimitiveFunc
                             ,IOFunc
-                            ,Func)
+                            ,Func
+                            ,Void)
                     ,Env)
 import Lusp.Parser (parse)
 
@@ -39,19 +40,17 @@ eval _   v@(Char _)    = return v
 eval env (Atom v)      = getVar env v
 eval _   (List [Atom "quote", v]) = return v
 eval env (List [Atom "load", String filename]) =
-    (last <$>) . mapM (eval env) =<< parse <$> readFile filename
+    parse <$> readFile filename >>= mapM (eval env) >> return Void
 eval env (List [Atom "if", predicate, consequnce, alternative]) =
     eval env predicate >>= \res ->
        case res of
          Bool True  -> eval env consequnce
-         Bool False -> eval env alternative
-         badType    -> throw $ TypeMismatch "bool" badType
+         _          -> eval env alternative
 eval env (List [Atom "if", predicate, consequnce]) =
     eval env predicate >>= \res ->
        case res of
          Bool True  -> eval env consequnce
-         Bool False -> throw $ Other "False if without alternative"
-         badType    -> throw $ TypeMismatch "bool" badType
+         _          -> throw $ Other "False if without an alternative"
 eval env (List [Atom "set!", Atom var, form]) = eval env form
     >>= setVar env var
 eval env (List [Atom "define", Atom var, form]) = eval env form

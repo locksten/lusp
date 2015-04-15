@@ -1,5 +1,4 @@
 module Lusp.LispVal (LispVal(..)
-                    ,isVoid
                     ,Env) where
 
 import Data.Complex (Complex, realPart, imagPart)
@@ -23,14 +22,15 @@ data LispVal = Atom String
              | IOFunc ([LispVal] -> IO LispVal)
              | Func [String] (Maybe String) [LispVal] Env
              | Port Handle
+             | EOF
 instance Show LispVal where show = showLispVal
 
 type Env = IORef [(String, IORef LispVal)]
 
 showLispVal :: LispVal -> String
+showLispVal (List [x])  = "(" ++ show x ++ ")"
 showLispVal (List (x:xs)) = "(" ++ show x ++ concatMap ((" " ++) . show) xs
     ++ ")"
-showLispVal (List [x])  = "(" ++ show x ++ ")"
 showLispVal (List [])   = "()"
 showLispVal (Vector xs) = "#" ++ show (List xs)
 showLispVal (DottedList xs end) = "(" ++ (tail . init . show) (List xs) ++
@@ -48,7 +48,4 @@ showLispVal (PrimitiveFunc _) = "<primitive>"
 showLispVal (IOFunc _)        = "<IO primitive>"
 showLispVal (Func {})         = "<function>"
 showLispVal (Port _)          = "<IO port>"
-
-isVoid :: LispVal -> Bool
-isVoid Void = True
-isVoid _ = False
+showLispVal (EOF)             = "<EOF>"

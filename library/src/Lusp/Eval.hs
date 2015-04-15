@@ -7,8 +7,7 @@ import Lusp.Environment (getVar
                         ,bindVars)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,TypeMismatch
-                                ,NumArgs
-                                ,Other))
+                                ,NumArgs))
 import Lusp.LispVal (LispVal(List
                             ,DottedList
                             ,Atom
@@ -50,7 +49,7 @@ eval env (List [Atom "if", predicate, consequnce]) =
     eval env predicate >>= \res ->
        case res of
          Bool True  -> eval env consequnce
-         _          -> throw $ Other "False if without an alternative"
+         _          -> return Void
 eval env (List [Atom "set!", Atom var, form]) = eval env form
     >>= setVar env var
 eval env (List [Atom "define", Atom var, form]) = eval env form

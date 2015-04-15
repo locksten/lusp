@@ -62,7 +62,7 @@ add params = foldl1 (\x y -> add' $ numCast x y) params
         add' _ = error "Expected Number"
 
 subtract :: [LispVal] -> LispVal
-subtract [] = throw $ NumArgs [1] []
+subtract [] = throw $ NumArgs "1" []
 subtract [Integer x] = Integer $ -x
 subtract [Ratio   x] = Ratio   $ -x
 subtract [Real    x] = Real    $ -x
@@ -84,7 +84,7 @@ multiply params = foldl1 (\x y -> mul $ numCast x y) params
         mul _ = error "Expected Number"
 
 divide :: [LispVal] -> LispVal
-divide [] = throw $ NumArgs [1] []
+divide [] = throw $ NumArgs "1" []
 divide [Integer x] = divide [Integer 1, Integer x]
 divide [Ratio   x] = divide [Integer 1, Ratio   x]
 divide [Real    x] = divide [Integer 1, Real    x]
@@ -120,4 +120,4 @@ integerBinDivOp [Integer _, Integer 0] _  = throw DivBy0
 integerBinDivOp [Integer a, Integer b] op = Integer (a `op` b)
 integerBinDivOp [Integer _, x] _          = throw $ TypeMismatch "integer" x
 integerBinDivOp [x, Integer _] _        = throw $ TypeMismatch "integer" x
-integerBinDivOp xs _                      = throw $ NumArgs [2] xs
+integerBinDivOp xs _                      = throw $ NumArgs "2" xs

@@ -86,21 +86,21 @@ ioPrimitives = [("open-input-file", makePort ReadMode)
 
 argumentless :: LispVal -> [LispVal] -> LispVal
 argumentless x [] = x
-argumentless _ x = throw $ NumArgs [0] x
+argumentless _ x = throw $ NumArgs "0" x
 
 predicate :: (LispVal -> Bool) -> [LispVal] -> LispVal
 predicate pred' [x] = Bool $ pred' x
-predicate _ x       = throw $ NumArgs [1] x
+predicate _ x       = throw $ NumArgs "1" x
 
 makePort :: IOMode -> [LispVal] -> IO LispVal
 makePort mode [String filename] = Port <$> openFile filename mode
 makePort _ [x]                  = throw $ TypeMismatch "String" x
-makePort _ x                    = throw $ NumArgs [1] x
+makePort _ x                    = throw $ NumArgs "1" x
 
 closePort :: [LispVal] -> IO LispVal
 closePort [Port port] = hClose port >> return Void
 closePort [x]         = throw $ TypeMismatch "<IO port>" x
-closePort x           = throw $ NumArgs [1] x
+closePort x           = throw $ NumArgs "1" x
 
 input :: (Handle -> IO LispVal) -> [LispVal] -> IO LispVal
 input op []          = input op [Port stdin]
@@ -108,7 +108,7 @@ input op [Port port] = catch (op port) care
   where care :: IOError -> IO LispVal
         care e = if isEOFError e then return EOF else throw e
 input _ [x]          = throw $ TypeMismatch "<IO port>" x
-input _ x            = throw $ NumArgs [0, 1] x
+input _ x            = throw $ NumArgs "0 or 1" x
 
 read :: Handle -> IO LispVal
 read hdl = (top . parse) <$> hGetLine hdl
@@ -127,13 +127,13 @@ outputConstant :: String -> [LispVal] -> IO LispVal
 outputConstant s []          = outputConstant s [Port stdout]
 outputConstant s [Port port] = hPutStr port s >> hFlush port >> return Void
 outputConstant _ [x]         = throw $ TypeMismatch "<IO port>" x
-outputConstant _ x           = throw $ NumArgs [0, 1] x
+outputConstant _ x           = throw $ NumArgs "0 or 1" x
 
 output :: (Handle -> LispVal -> IO ()) -> [LispVal] -> IO LispVal
 output op [obj]            = output op [obj, Port stdout]
 output op [obj, Port port] = op port obj >> hFlush port >> return Void
 output _  [_, x]           = throw $ TypeMismatch "<IO port>" x
-output _  x                = throw $ NumArgs [1, 2] x
+output _  x                = throw $ NumArgs "1 or 2" x
 
 write :: Handle -> LispVal -> IO ()
 write hdl = hPutStr hdl . show
@@ -147,7 +147,7 @@ writeChar _ x          = throw $ TypeMismatch "Char" x
 
 ioPredicate :: (LispVal -> IO Bool) -> [LispVal] -> IO LispVal
 ioPredicate pred' [x] = Bool <$> pred' x
-ioPredicate _ x       = throw $ NumArgs [1] x
+ioPredicate _ x       = throw $ NumArgs "1" x
 
 isInputPort :: LispVal -> IO Bool
 isInputPort (Port x) = hIsReadable x
@@ -160,4 +160,4 @@ isOutputPort _        = return False
 apply :: [LispVal] -> IO LispVal
 apply [f, List args] = Eval.apply f args
 apply [_, x]         = throw $ TypeMismatch "list" x
-apply x              = throw $ NumArgs [2] x
+apply x              = throw $ NumArgs "2" x

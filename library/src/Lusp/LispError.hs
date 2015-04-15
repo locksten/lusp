@@ -5,7 +5,7 @@ import Lusp.LispVal (LispVal)
 import Control.Exception (Exception)
 import Text.Parsec.Error (ParseError)
 
-data LispError = NumArgs [Integer] [LispVal]
+data LispError = NumArgs String [LispVal]
                | TypeMismatch String LispVal
                | ParseError ParseError
                | BadSpecialForm String LispVal
@@ -20,8 +20,8 @@ showError :: LispError -> String
 showError (UnboundVar message varname)  = message ++ ": " ++ varname
 showError (BadSpecialForm message form) = message ++ ": " ++ show form
 showError (NotFunction message func)    = message ++ ": " ++ show func
-showError (NumArgs expected found)      = "Expected " ++ show expected
-                                        ++ " args; found values " ++ show found
+showError (NumArgs expected found) = "Expected " ++ expected ++ " arguments" ++
+    "; found values " ++ show found
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
                                         ++ ", found " ++ show found
 showError (ParseError parseErr)         = "Parse error at " ++ show parseErr

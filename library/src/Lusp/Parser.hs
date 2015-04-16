@@ -25,7 +25,8 @@ import Data.Ratio ((%))
 import Numeric (readFloat, readHex, readOct)
 
 parseExpr :: Parser LispVal
-parseExpr = (parseAtom
+parseExpr = ignored
+         *> (parseAtom
          <|> parseStartingWithOctothorpe
          <|> parseString
          <|> parseNumber

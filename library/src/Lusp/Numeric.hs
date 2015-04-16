@@ -52,8 +52,16 @@ ratioToComplex (Ratio x) = Complex $ fromInteger (numerator x)
                                    / fromInteger (denominator x)
 ratioToComplex _ = error "Expected Ratio"
 
+assertIsNumber :: LispVal -> LispVal
+assertIsNumber x@(Integer _) = x
+assertIsNumber x@(Ratio   _) = x
+assertIsNumber x@(Real    _) = x
+assertIsNumber x@(Complex _) = x
+assertIsNumber x             = throw $ TypeMismatch "number" x
+
 add :: [LispVal] -> LispVal
-add [] = Integer 0
+add []  = Integer 0
+add [x] = assertIsNumber x
 add params = foldl1 (\x y -> add' $ numCast x y) params
   where add' (Integer a, Integer b) = Integer $ a + b
         add' (Ratio   a, Ratio   b) = Ratio   $ a + b
@@ -62,11 +70,8 @@ add params = foldl1 (\x y -> add' $ numCast x y) params
         add' _ = error "Expected Number"
 
 subtract :: [LispVal] -> LispVal
-subtract [] = throw $ NumArgs "1" []
-subtract [Integer x] = Integer $ -x
-subtract [Ratio   x] = Ratio   $ -x
-subtract [Real    x] = Real    $ -x
-subtract [Complex x] = Complex $ -x
+subtract []  = throw $ NumArgs "1" []
+subtract [x] = subtract [Integer 0, assertIsNumber x]
 subtract params = foldl1 (\x y -> sub $ numCast x y) params
   where sub (Integer a, Integer b) = Integer $ a - b
         sub (Ratio   a, Ratio   b) = Ratio   $ a - b
@@ -75,7 +80,8 @@ subtract params = foldl1 (\x y -> sub $ numCast x y) params
         sub _ = error "Expected Number"
 
 multiply :: [LispVal] -> LispVal
-multiply [] = Integer 1
+multiply []  = Integer 1
+multiply [x] = assertIsNumber x
 multiply params = foldl1 (\x y -> mul $ numCast x y) params
   where mul (Integer a, Integer b) = Integer $ a * b
         mul (Ratio   a, Ratio   b) = Ratio   $ a * b
@@ -84,11 +90,8 @@ multiply params = foldl1 (\x y -> mul $ numCast x y) params
         mul _ = error "Expected Number"
 
 divide :: [LispVal] -> LispVal
-divide [] = throw $ NumArgs "1" []
-divide [Integer x] = divide [Integer 1, Integer x]
-divide [Ratio   x] = divide [Integer 1, Ratio   x]
-divide [Real    x] = divide [Integer 1, Real    x]
-divide [Complex x] = divide [Integer 1, Complex x]
+divide []  = throw $ NumArgs "1" []
+divide [x] = divide [Integer 1, assertIsNumber x]
 divide params = foldl1 (\x y -> div $ numCast x y) params
   where div (Integer a, Integer b)
             | b           == 0 = err
@@ -119,5 +122,5 @@ integerBinDivOp :: [LispVal] -> (Integer -> Integer -> Integer) -> LispVal
 integerBinDivOp [Integer _, Integer 0] _  = throw DivBy0
 integerBinDivOp [Integer a, Integer b] op = Integer (a `op` b)
 integerBinDivOp [Integer _, x] _          = throw $ TypeMismatch "integer" x
-integerBinDivOp [x, Integer _] _        = throw $ TypeMismatch "integer" x
+integerBinDivOp [x, Integer _] _          = throw $ TypeMismatch "integer" x
 integerBinDivOp xs _                      = throw $ NumArgs "2" xs

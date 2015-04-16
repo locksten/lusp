@@ -7,7 +7,8 @@ import Lusp.Environment (emptyEnv
                         ,bindVars)
 import qualified Lusp.Eval as Eval (apply)
 import Lusp.LispError (LispError(NumArgs
-                                ,TypeMismatch))
+                                ,TypeMismatch
+                                ,Other))
 import Lusp.LispVal (LispVal(List
                             ,Bool
                             ,String
@@ -19,7 +20,8 @@ import Lusp.LispVal (LispVal(List
                             ,EOF)
                     ,Env)
 import Lusp.LispValUtils (prettyPrint
-                         ,isEOF)
+                         ,isEOF
+                         ,extractList)
 import qualified Lusp.Numeric as N (add
                                    ,subtract
                                    ,multiply
@@ -29,10 +31,12 @@ import qualified Lusp.Numeric as N (add
                                    ,quotient)
 import Lusp.Parser (parse)
 
-import Prelude hiding (read)
+import Prelude hiding (read
+                      ,map)
 
 import Control.Exception (throw
                          ,catch)
+import Data.List (transpose)
 import System.IO (IOMode(ReadMode
                         ,WriteMode)
                  ,Handle
@@ -51,8 +55,9 @@ import System.IO (IOMode(ReadMode
 import System.IO.Error (isEOFError)
 
 primitiveEnv :: IO Env
-primitiveEnv = emptyEnv >>= flip bindVars (map (makeF IOFunc) ioPrimitives ++
-                                           map (makeF PrimitiveFunc) primitives)
+primitiveEnv = emptyEnv >>=
+    flip bindVars (fmap (makeF IOFunc) ioPrimitives ++
+                   fmap (makeF PrimitiveFunc) primitives)
   where makeF cons (var, func) = (var, cons func)
 
 primitives :: [(String, [LispVal] -> LispVal)]
@@ -82,7 +87,8 @@ ioPrimitives = [("open-input-file", makePort ReadMode)
                ,("char-ready?", input charReady)
                ,("display", output display)
                ,("newline", outputConstant "\n")
-               ,("apply", apply)]
+               ,("apply", apply)
+               ,("map", map)]
 
 argumentless :: LispVal -> [LispVal] -> LispVal
 argumentless x [] = x
@@ -161,3 +167,14 @@ apply :: [LispVal] -> IO LispVal
 apply [f, List args] = Eval.apply f args
 apply [_, x]         = throw $ TypeMismatch "list" x
 apply x              = throw $ NumArgs "2" x
+
+map :: [LispVal] -> IO LispVal
+map x@(_:[])     = throw $ NumArgs "2 or more" x
+map x@([])       = throw $ NumArgs "2 or more" x
+map (func:lists) =
+    if assertLengths then List <$> sequence (Eval.apply func <$> transposed)
+                     else throw $ Other "map: The lists must be of equal length"
+  where transposed    = transpose extracted
+        extracted     = extractList <$> lists
+        lengths       = length <$> extracted
+        assertLengths = and $ (== head lengths) <$> lengths

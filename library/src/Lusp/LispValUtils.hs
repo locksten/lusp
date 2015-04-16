@@ -1,9 +1,12 @@
 module Lusp.LispValUtils (prettyPrint
                          ,isVoid
-                         ,isEOF) where
+                         ,isEOF
+                         ,extractList) where
 
-import Lusp.LispError (LispError(ParseError))
-import Lusp.LispVal (LispVal(String
+import Lusp.LispError (LispError(ParseError
+                                ,TypeMismatch))
+import Lusp.LispVal (LispVal(List
+                            ,String
                             ,Char
                             ,Void
                             ,EOF))
@@ -27,3 +30,7 @@ isVoid _ = False
 isEOF :: LispVal -> Bool
 isEOF EOF = True
 isEOF _   = False
+
+extractList :: LispVal -> [LispVal]
+extractList (List x) = x
+extractList x        = throw $ TypeMismatch "List" x

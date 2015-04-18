@@ -1,6 +1,7 @@
 module Lusp.LispValUtils (prettyPrint
                          ,isVoid
                          ,isEOF
+                         ,isSymbol
                          ,isInteger
                          ,isReal
                          ,isRatio
@@ -17,7 +18,8 @@ import Lusp.LispVal (LispVal(List
                             ,Integer
                             ,Real
                             ,Ratio
-                            ,Complex))
+                            ,Complex
+                            ,Atom))
 import Lusp.Parser (parseString)
 
 import Control.Exception (throw)
@@ -30,6 +32,10 @@ prettyPrint (String x) = case parse parseString "" ("\"" ++ x ++ "\"") of
                            Right _            -> error "Expected String"
 prettyPrint (Char x) = [x]
 prettyPrint x = show x
+
+isSymbol :: LispVal -> Bool
+isSymbol (Atom _) = True
+isSymbol _        = False
 
 isVoid :: LispVal -> Bool
 isVoid Void = True

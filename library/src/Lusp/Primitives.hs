@@ -10,6 +10,7 @@ import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
                                 ,Other))
 import Lusp.LispVal (LispVal(List
+                            ,Atom
                             ,Bool
                             ,String
                             ,Char
@@ -21,6 +22,7 @@ import Lusp.LispVal (LispVal(List
                     ,Env)
 import qualified Lusp.LispValUtils as LVU (prettyPrint
                                           ,extractList
+                                          ,isSymbol
                                           ,isEOF
                                           ,isInteger
                                           ,isReal
@@ -93,8 +95,6 @@ primitives = [("+"  ,N.add)
              ,(">"  ,listPredicate N.decreasing)
              ,("<=" ,listPredicate N.nonDecreasing)
              ,(">=" ,listPredicate N.nonIncreasing)
-             ,("inexact->exact" ,singleArg N.inexactToExact)
-             ,("exact->inexact" ,singleArg N.exactToInexact)
              ,("numerator"   ,singleArg N.numerator)
              ,("denominator" ,singleArg N.denominator)
              ,("floor"       ,singleArg N.floor)
@@ -108,9 +108,8 @@ primitives = [("+"  ,N.add)
              ,("modulo"      ,N.modulo)
              ,("remainder"   ,N.remainder)
              ,("quotient"    ,N.quotient)
-             ,("current-input-port"  ,argumentless $ Port stdin)
-             ,("current-output-port" ,argumentless $ Port stdout)
              ,("eof-object?" ,predicate LVU.isEOF)
+             ,("symbol?"     ,predicate LVU.isSymbol)
              ,("number?"     ,predicate isNumber)
              ,("complex?"    ,predicate isComplex)
              ,("real?"       ,predicate isReal)
@@ -118,7 +117,13 @@ primitives = [("+"  ,N.add)
              ,("integer?"    ,predicate isInteger)
              ,("rational?"   ,predicate isRatio)
              ,("exact?"      ,predicate isExact)
-             ,("inexact?"    ,predicate (not . isExact))]
+             ,("inexact?"    ,predicate (not . isExact))
+             ,("current-input-port"  ,argumentless $ Port stdin)
+             ,("current-output-port" ,argumentless $ Port stdout)
+             ,("inexact->exact" ,singleArg N.inexactToExact)
+             ,("exact->inexact" ,singleArg N.exactToInexact)
+             ,("symbol->string" ,singleArg symbolToString)
+             ,("string->symbol" ,singleArg stringToSymbol)]
 
 ioPrimitives :: [(String, [LispVal] -> IO LispVal)]
 ioPrimitives = [("open-input-file"   ,makePort ReadMode)
@@ -180,6 +185,14 @@ isExact x = if isNumber x then isInteger x || isRatio x
 
 numberTypePredicates :: [LispVal -> Bool]
 numberTypePredicates = [LVU.isInteger, LVU.isRatio, LVU.isReal, LVU.isComplex]
+
+symbolToString :: LispVal -> LispVal
+symbolToString (Atom x) = String x
+symbolToString x        = throw $ TypeMismatch "symbol" x
+
+stringToSymbol :: LispVal -> LispVal
+stringToSymbol (String x) = Atom x
+stringToSymbol x          = throw $ TypeMismatch "string" x
 
 makePort :: IOMode -> [LispVal] -> IO LispVal
 makePort mode [String filename] = Port <$> openFile filename mode

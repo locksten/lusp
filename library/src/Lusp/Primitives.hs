@@ -19,20 +19,42 @@ import Lusp.LispVal (LispVal(List
                             ,Void
                             ,EOF)
                     ,Env)
-import Lusp.LispValUtils (prettyPrint
-                         ,isEOF
-                         ,extractList)
-import qualified Lusp.Numeric as N (add
+import qualified Lusp.LispValUtils as LVU (prettyPrint
+                                          ,extractList
+                                          ,isEOF
+                                          ,isInteger
+                                          ,isReal
+                                          ,isRatio
+                                          ,isComplex)
+import qualified Lusp.Numeric as N (equalElems
+                                   ,increasing
+                                   ,decreasing
+                                   ,nonIncreasing
+                                   ,nonDecreasing
+                                   ,sqrt
+                                   ,exp
+                                   ,log
+                                   ,floor
+                                   ,ceiling
+                                   ,truncate
+                                   ,round
+                                   ,expt
+                                   ,add
                                    ,subtract
                                    ,multiply
                                    ,divide
                                    ,modulo
                                    ,remainder
-                                   ,quotient)
+                                   ,quotient
+                                   ,numerator
+                                   ,denominator
+                                   ,inexactToExact
+                                   ,exactToInexact)
 import Lusp.Parser (parse)
 
 import Prelude hiding (read
-                      ,map)
+                      ,map
+                      ,compare)
 
 import Control.Exception (throw
                          ,catch)
@@ -56,47 +78,108 @@ import System.IO.Error (isEOFError)
 
 primitiveEnv :: IO Env
 primitiveEnv = emptyEnv >>=
-    flip bindVars (fmap (makeF IOFunc) ioPrimitives ++
-                   fmap (makeF PrimitiveFunc) primitives)
+    flip bindVars ((makeF IOFunc <$> ioPrimitives) ++
+                   (makeF PrimitiveFunc <$> primitives))
   where makeF cons (var, func) = (var, cons func)
 
 primitives :: [(String, [LispVal] -> LispVal)]
-primitives = [("+", N.add)
-             ,("-", N.subtract)
-             ,("*", N.multiply)
-             ,("/", N.divide)
-             ,("modulo", N.modulo)
-             ,("remainder", N.remainder)
-             ,("quotient", N.quotient)
-             ,("current-input-port", argumentless $ Port stdin)
-             ,("current-output-port", argumentless $ Port stdout)
-             ,("eof-object?", predicate isEOF)]
+
+primitives = [("+"  ,N.add)
+             ,("-"  ,N.subtract)
+             ,("*"  ,N.multiply)
+             ,("/"  ,N.divide)
+             ,("="  ,listPredicate N.equalElems)
+             ,("<"  ,listPredicate N.increasing)
+             ,(">"  ,listPredicate N.decreasing)
+             ,("<=" ,listPredicate N.nonDecreasing)
+             ,(">=" ,listPredicate N.nonIncreasing)
+             ,("inexact->exact" ,singleArg N.inexactToExact)
+             ,("exact->inexact" ,singleArg N.exactToInexact)
+             ,("numerator"   ,singleArg N.numerator)
+             ,("denominator" ,singleArg N.denominator)
+             ,("floor"       ,singleArg N.floor)
+             ,("ceiling"     ,singleArg N.ceiling)
+             ,("truncate"    ,singleArg N.truncate)
+             ,("round"       ,singleArg N.round)
+             ,("sqrt"        ,singleArg N.sqrt)
+             ,("log"         ,singleArg N.log)
+             ,("exp"         ,singleArg N.exp)
+             ,("expt"        ,twoArg N.expt)
+             ,("modulo"      ,N.modulo)
+             ,("remainder"   ,N.remainder)
+             ,("quotient"    ,N.quotient)
+             ,("current-input-port"  ,argumentless $ Port stdin)
+             ,("current-output-port" ,argumentless $ Port stdout)
+             ,("eof-object?" ,predicate LVU.isEOF)
+             ,("number?"     ,predicate isNumber)
+             ,("complex?"    ,predicate isComplex)
+             ,("real?"       ,predicate isReal)
+             ,("rational?"   ,predicate isRatio)
+             ,("integer?"    ,predicate isInteger)
+             ,("rational?"   ,predicate isRatio)
+             ,("exact?"      ,predicate isExact)
+             ,("inexact?"    ,predicate (not . isExact))]
 
 ioPrimitives :: [(String, [LispVal] -> IO LispVal)]
-ioPrimitives = [("open-input-file", makePort ReadMode)
-               ,("open-output-file", makePort WriteMode)
-               ,("close-input-port", closePort)
-               ,("close-output-port", closePort)
-               ,("input-port?", ioPredicate isInputPort)
-               ,("output-port?", ioPredicate isOutputPort)
-               ,("read", input read)
-               ,("read-char", input $ inputChar hGetChar)
-               ,("peek-char", input $ inputChar hLookAhead)
-               ,("write", output write)
-               ,("write-char", output writeChar)
-               ,("char-ready?", input charReady)
-               ,("display", output display)
-               ,("newline", outputConstant "\n")
-               ,("apply", apply)
-               ,("map", map)]
+ioPrimitives = [("open-input-file"   ,makePort ReadMode)
+               ,("open-output-file"  ,makePort WriteMode)
+               ,("close-input-port"  ,closePort)
+               ,("close-output-port" ,closePort)
+               ,("input-port?"  ,ioPredicate isInputPort)
+               ,("output-port?" ,ioPredicate isOutputPort)
+               ,("read"         ,input read)
+               ,("read-char"    ,input $ inputChar hGetChar)
+               ,("peek-char"    ,input $ inputChar hLookAhead)
+               ,("char-ready?"  ,input charReady)
+               ,("write"        ,output write)
+               ,("write-char"   ,output writeChar)
+               ,("display"      ,output display)
+               ,("newline"      ,outputConstant "\n")
+               ,("apply" ,apply)
+               ,("map"   ,map)]
 
 argumentless :: LispVal -> [LispVal] -> LispVal
 argumentless x [] = x
-argumentless _ x = throw $ NumArgs "0" x
+argumentless _ x  = throw $ NumArgs "0" x
+
+singleArg :: (LispVal -> LispVal) -> [LispVal] -> LispVal
+singleArg op [x] = op x
+singleArg _ x    = throw $ NumArgs "1" x
+
+twoArg :: (LispVal -> LispVal -> LispVal) -> [LispVal] -> LispVal
+twoArg op [x, y] = op x y
+twoArg _ x       = throw $ NumArgs "2" x
+
+listPredicate :: ([LispVal] -> Bool) -> [LispVal] -> LispVal
+listPredicate op xs = if length xs >= 2
+                         then Bool $ op xs
+                         else throw $ NumArgs "2 or more" xs
 
 predicate :: (LispVal -> Bool) -> [LispVal] -> LispVal
 predicate pred' [x] = Bool $ pred' x
 predicate _ x       = throw $ NumArgs "1" x
+
+isNumber :: LispVal -> Bool
+isNumber x = or $ ($ x) <$> numberTypePredicates
+
+isInteger :: LispVal -> Bool
+isInteger x = or $ ($ x) <$> take 1 numberTypePredicates
+
+isRatio :: LispVal -> Bool
+isRatio x = or $ ($ x) <$> take 2 numberTypePredicates
+
+isReal :: LispVal -> Bool
+isReal x = or $ ($ x) <$> take 3 numberTypePredicates
+
+isComplex :: LispVal -> Bool
+isComplex x = or $ ($ x) <$> take 4 numberTypePredicates
+
+isExact :: LispVal -> Bool
+isExact x = if isNumber x then isInteger x || isRatio x
+                          else throw $ TypeMismatch "number" x
+
+numberTypePredicates :: [LispVal -> Bool]
+numberTypePredicates = [LVU.isInteger, LVU.isRatio, LVU.isReal, LVU.isComplex]
 
 makePort :: IOMode -> [LispVal] -> IO LispVal
 makePort mode [String filename] = Port <$> openFile filename mode
@@ -145,7 +228,7 @@ write :: Handle -> LispVal -> IO ()
 write hdl = hPutStr hdl . show
 
 display :: Handle -> LispVal -> IO ()
-display hdl = hPutStr hdl . prettyPrint
+display hdl = hPutStr hdl . LVU.prettyPrint
 
 writeChar :: Handle -> LispVal -> IO ()
 writeChar hdl (Char c) = hPutStr hdl [c]
@@ -169,12 +252,11 @@ apply [_, x]         = throw $ TypeMismatch "list" x
 apply x              = throw $ NumArgs "2" x
 
 map :: [LispVal] -> IO LispVal
-map x@(_:[])     = throw $ NumArgs "2 or more" x
-map x@([])       = throw $ NumArgs "2 or more" x
-map (func:lists) =
+map (func:lists@(_:_)) =
     if assertLengths then List <$> sequence (Eval.apply func <$> transposed)
                      else throw $ Other "map: The lists must be of equal length"
   where transposed    = transpose extracted
-        extracted     = extractList <$> lists
+        extracted     = LVU.extractList <$> lists
         lengths       = length <$> extracted
         assertLengths = and $ (== head lengths) <$> lengths
+map x = throw $ NumArgs "2 or more" x

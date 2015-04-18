@@ -1,26 +1,64 @@
-module Lusp.Numeric (add
+module Lusp.Numeric (equalElems
+                    ,increasing
+                    ,decreasing
+                    ,nonIncreasing
+                    ,nonDecreasing
+                    ,sqrt
+                    ,log
+                    ,exp
+                    ,floor
+                    ,ceiling
+                    ,truncate
+                    ,round
+                    ,expt
+                    ,add
                     ,subtract
                     ,multiply
                     ,divide
                     ,modulo
                     ,remainder
-                    ,quotient) where
+                    ,quotient
+                    ,denominator
+                    ,numerator
+                    ,inexactToExact
+                    ,exactToInexact) where
 
 import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
-                                ,DivBy0))
+                                ,DivBy0
+                                ,Other))
 import Lusp.LispVal (LispVal(Integer
                             ,Ratio
                             ,Real
                             ,Complex))
 
 import Prelude hiding (div
-                      ,subtract)
-import qualified Prelude as P (div)
+                      ,subtract
+                      ,compare
+                      ,floor
+                      ,ceiling
+                      ,truncate
+                      ,round
+                      ,exp
+                      ,log
+                      ,sqrt)
+import qualified Prelude as P (div
+                              ,compare
+                              ,floor
+                              ,ceiling
+                              ,truncate
+                              ,round
+                              ,exp
+                              ,log
+                              ,sqrt)
 
 import Control.Exception (throw)
 import Data.Complex (Complex((:+)))
-import Data.Ratio ((%), numerator, denominator)
+import Data.List (sortBy)
+import qualified Data.Ratio as D ((%)
+                                  ,numerator
+                                  ,denominator
+                                  ,approxRational)
 
 numCast :: LispVal -> LispVal -> (LispVal, LispVal)
 numCast a@(Integer _) b@(Integer _) = (a, b)
@@ -48,8 +86,8 @@ numCast a b = case a of
   where err notNum = throw $ TypeMismatch "number" notNum
 
 ratioToComplex :: LispVal -> LispVal
-ratioToComplex (Ratio x) = Complex $ fromInteger (numerator x)
-                                   / fromInteger (denominator x)
+ratioToComplex (Ratio x) = Complex $ fromInteger (D.numerator x)
+                                   / fromInteger (D.denominator x)
 ratioToComplex _ = error "Expected Ratio"
 
 assertIsNumber :: LispVal -> LispVal
@@ -96,7 +134,7 @@ divide params = foldl1 (\x y -> div $ numCast x y) params
   where div (Integer a, Integer b)
             | b           == 0 = err
             | (a `mod` b) == 0 = Integer (a `P.div` b)
-            | otherwise        = Ratio (a % b)
+            | otherwise        = Ratio ((D.%) a b)
         div (Ratio a, Ratio b)
             | b == 0    = err
             | otherwise = Ratio (a / b)
@@ -108,6 +146,121 @@ divide params = foldl1 (\x y -> div $ numCast x y) params
             | otherwise = Complex (a / b)
         div _ = error "Expected Number"
         err = throw DivBy0
+
+compare :: LispVal -> LispVal -> Ordering
+compare a b = comp $ numCast a b
+  where comp (Integer x, Integer y) = x `P.compare` y
+        comp (Ratio   x, Ratio   y) = x `P.compare` y
+        comp (Real    x, Real    y) = x `P.compare` y
+        comp (Complex _, Complex _) = throw $ Other
+          "Comparison between complex numebers is not allowed"
+        comp _ = error "Expected Number"
+
+equal :: LispVal -> LispVal -> Bool
+equal x y = compare x y == EQ
+
+equalElems :: [LispVal] -> Bool
+equalElems xs = null xs || and ((head xs `equal`) <$> xs)
+-- equalElems xs = if null xs then True
+--                            else and $ (head xs `equal`) <$> xs
+
+equalLists :: [LispVal] -> [LispVal] -> Bool
+equalLists xs ys = (length xs == length ys) && and (zipWith equal xs ys)
+
+increasing :: [LispVal] -> Bool
+increasing xs = nonDecreasing xs && elemsUnique xs
+
+decreasing :: [LispVal] -> Bool
+decreasing xs = nonIncreasing xs && elemsUnique xs
+
+nonDecreasing :: [LispVal] -> Bool
+nonDecreasing xs = xs `equalLists` sortBy compare xs
+
+nonIncreasing :: [LispVal] -> Bool
+nonIncreasing xs = xs `equalLists` sortBy (flip compare) xs
+
+elemsUnique :: [LispVal] -> Bool
+elemsUnique [a, b]   = not (a `equal` b)
+elemsUnique (a:b:cs) = not (a `equal` b) && elemsUnique (b:cs)
+elemsUnique xs       = length xs < 2
+
+numerator :: LispVal -> LispVal
+numerator x@(Integer _) = x
+numerator (Ratio x)     = Integer $ D.numerator x
+numerator (Real x)    = (numerator . Ratio . doubleToRatio) x
+numerator x             = throw $ TypeMismatch "integer / ratio / real" x
+
+denominator :: LispVal -> LispVal
+denominator (Integer _) = Integer 1
+denominator (Ratio x)   = Integer $ D.denominator x
+denominator (Real x)  = (denominator . Ratio . doubleToRatio) x
+denominator x           = throw $ TypeMismatch "integer / ratio / real" x
+
+unaryRealToIntOp :: (Double -> Integer) -> LispVal -> LispVal
+unaryRealToIntOp _ x@(Integer _) = x
+unaryRealToIntOp op (Ratio x)    = Integer $ op (ratioToDouble x)
+unaryRealToIntOp op (Real x)     = Integer $ op x
+unaryRealToIntOp _ x = throw $ TypeMismatch "integer / ratio / real" x
+
+floor :: LispVal -> LispVal
+floor = unaryRealToIntOp P.floor
+
+ceiling :: LispVal -> LispVal
+ceiling = unaryRealToIntOp P.ceiling
+
+truncate :: LispVal -> LispVal
+truncate = unaryRealToIntOp P.truncate
+
+round :: LispVal -> LispVal
+round = unaryRealToIntOp P.round
+
+unaryRealToRealOp :: (Double -> Double) -> LispVal -> LispVal
+unaryRealToRealOp op (Integer x)   = Real $ op (fromInteger x)
+unaryRealToRealOp op (Ratio x)     = Real $ op (ratioToDouble x)
+unaryRealToRealOp op (Real x)      = Real $ op x
+unaryRealToRealOp _ x = throw $ TypeMismatch "integer / ratio / real" x
+
+exp :: LispVal -> LispVal
+exp = unaryRealToRealOp P.exp
+
+sqrt :: LispVal -> LispVal
+sqrt = unaryRealToRealOp P.sqrt
+
+log :: LispVal -> LispVal
+log = unaryRealToRealOp P.log
+
+realBinOp :: (Double -> Double -> Double) -> LispVal -> LispVal -> LispVal
+realBinOp _ x@(Complex _) _ = throw $ TypeMismatch "integer / ratio / real" x
+realBinOp _ _ x@(Complex _) = throw $ TypeMismatch "integer / ratio / real" x
+realBinOp oper a b          = rBOp oper (numCast a b)
+  where rBOp :: (Double -> Double -> Double) -> (LispVal, LispVal) -> LispVal
+        rBOp op (Integer x, Integer y) = Real $ fromInteger x `op` fromInteger y
+        rBOp op (Ratio   x, Ratio   y) = Real $ ratioToDouble x `op`
+                                                ratioToDouble y
+        rBOp op (Real    x, Real    y) = Real $ x `op` y
+        rBOp _ _ = error "Expected Number"
+
+expt :: LispVal -> LispVal -> LispVal
+expt = realBinOp (**)
+
+exactToInexact :: LispVal -> LispVal
+exactToInexact (Integer x)   = Real $ fromInteger x
+exactToInexact (Ratio x)     = Real $ ratioToDouble x
+exactToInexact x@(Real _)    = x
+exactToInexact x@(Complex _) = x
+exactToInexact x             = throw $ TypeMismatch "number" x
+
+inexactToExact :: LispVal -> LispVal
+inexactToExact x@(Integer _) = x
+inexactToExact x@(Ratio _)   = x
+inexactToExact (Real x)      = Ratio $ doubleToRatio x
+inexactToExact x             = throw $ TypeMismatch "integer / ratio / real" x
+
+ratioToDouble :: Rational -> Double
+ratioToDouble x = fromInteger (D.numerator x) / fromInteger (D.denominator x)
+
+doubleToRatio :: Double -> Rational
+doubleToRatio x = D.approxRational x 0.00000001
 
 modulo :: [LispVal] -> LispVal
 modulo xs = integerBinDivOp xs mod

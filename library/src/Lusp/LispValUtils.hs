@@ -1,6 +1,10 @@
 module Lusp.LispValUtils (prettyPrint
                          ,isVoid
                          ,isEOF
+                         ,isInteger
+                         ,isReal
+                         ,isRatio
+                         ,isComplex
                          ,extractList) where
 
 import Lusp.LispError (LispError(ParseError
@@ -9,7 +13,11 @@ import Lusp.LispVal (LispVal(List
                             ,String
                             ,Char
                             ,Void
-                            ,EOF))
+                            ,EOF
+                            ,Integer
+                            ,Real
+                            ,Ratio
+                            ,Complex))
 import Lusp.Parser (parseString)
 
 import Control.Exception (throw)
@@ -25,11 +33,27 @@ prettyPrint x = show x
 
 isVoid :: LispVal -> Bool
 isVoid Void = True
-isVoid _ = False
+isVoid _    = False
 
 isEOF :: LispVal -> Bool
 isEOF EOF = True
 isEOF _   = False
+
+isInteger :: LispVal -> Bool
+isInteger (Integer _) = True
+isInteger _           = False
+
+isReal :: LispVal -> Bool
+isReal (Real _)       = True
+isReal _              = False
+
+isRatio :: LispVal -> Bool
+isRatio (Ratio _)     = True
+isRatio _             = False
+
+isComplex :: LispVal -> Bool
+isComplex (Complex _) = True
+isComplex _           = False
 
 extractList :: LispVal -> [LispVal]
 extractList (List x) = x

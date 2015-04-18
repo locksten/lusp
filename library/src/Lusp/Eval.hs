@@ -39,7 +39,7 @@ eval _   v@(Char _)    = return v
 eval env (Atom v)      = getVar env v
 eval _   (List [Atom "quote", v]) = return v
 eval env (List [Atom "load", String filename]) =
-    parse <$> readFile filename >>= mapM (eval env) >> return Void
+    parse <$> readFile filename >>= mapM_ (eval env) >> return Void
 eval env (List [Atom "if", predicate, consequnce, alternative]) =
     eval env predicate >>= \res ->
        case res of

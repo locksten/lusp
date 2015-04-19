@@ -10,6 +10,7 @@ import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
                                 ,Other))
 import Lusp.LispVal (LispVal(List
+                            ,DottedList
                             ,Atom
                             ,Bool
                             ,String
@@ -118,12 +119,16 @@ primitives = [("+"  ,N.add)
              ,("rational?"   ,predicate isRatio)
              ,("exact?"      ,predicate isExact)
              ,("inexact?"    ,predicate (not . isExact))
-             ,("current-input-port"  ,argumentless $ Port stdin)
-             ,("current-output-port" ,argumentless $ Port stdout)
+             ,("pair?"       ,predicate isPair)
              ,("inexact->exact" ,singleArg N.inexactToExact)
              ,("exact->inexact" ,singleArg N.exactToInexact)
              ,("symbol->string" ,singleArg symbolToString)
-             ,("string->symbol" ,singleArg stringToSymbol)]
+             ,("string->symbol" ,singleArg stringToSymbol)
+             ,("current-input-port"  ,argumentless $ Port stdin)
+             ,("current-output-port" ,argumentless $ Port stdout)
+             ,("cons"     ,twoArg cons)
+             ,("car"      ,singleArg car)
+             ,("cdr"      ,singleArg cdr)]
 
 ioPrimitives :: [(String, [LispVal] -> IO LispVal)]
 ioPrimitives = [("open-input-file"   ,makePort ReadMode)
@@ -193,6 +198,28 @@ symbolToString x        = throw $ TypeMismatch "symbol" x
 stringToSymbol :: LispVal -> LispVal
 stringToSymbol (String x) = Atom x
 stringToSymbol x          = throw $ TypeMismatch "string" x
+
+isPair :: LispVal -> Bool
+isPair (List xs)         = (not . null) xs
+isPair (DottedList xs _) = isPair $ List xs
+isPair _                 = False
+
+cons :: LispVal -> LispVal -> LispVal
+cons x (List [])         = List [x]
+cons x (List xs)         = List (x : xs)
+cons x (DottedList xs e) = DottedList (x : xs) e
+cons x y                 = DottedList [x] y
+
+car :: LispVal -> LispVal
+car (List (x:xs))     = x
+car (DottedList xs _) = car $ List xs
+car x                 = throw $ TypeMismatch "pair" x
+
+cdr :: LispVal -> LispVal
+cdr (List (_:xs))         = List xs
+cdr (DottedList [_] e)    = e
+cdr (DottedList (_:xs) e) = DottedList xs e
+cdr x                     = throw $ TypeMismatch "pair" x
 
 makePort :: IOMode -> [LispVal] -> IO LispVal
 makePort mode [String filename] = Port <$> openFile filename mode

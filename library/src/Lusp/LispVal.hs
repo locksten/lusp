@@ -1,8 +1,9 @@
 module Lusp.LispVal (LispVal(..)
-                    ,Env) where
+                    ,Env(Env)) where
 
 import Data.Complex (Complex, realPart, imagPart)
 import Data.IORef (IORef)
+import qualified Data.Map.Strict as Map (Map)
 import Data.Ratio (numerator, denominator)
 import System.IO (Handle)
 
@@ -25,7 +26,7 @@ data LispVal = Atom String
              | EOF
 instance Show LispVal where show = showLispVal
 
-type Env = IORef [(String, IORef LispVal)]
+data Env = Env (Maybe Env, IORef (Map.Map String (IORef LispVal)))
 
 showLispVal :: LispVal -> String
 showLispVal (List [x])  = "(" ++ show x ++ ")"

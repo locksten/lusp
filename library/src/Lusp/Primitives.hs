@@ -83,7 +83,7 @@ primitiveEnv :: IO Env
 primitiveEnv = emptyEnv >>=
     flip bindVars ((makeF IOFunc <$> ioPrimitives) ++
                    (makeF PrimitiveFunc <$> primitives))
-  where makeF cons (var, func) = (var, cons func)
+  where makeF constr (var, func) = (var, constr func)
 
 primitives :: [(String, [LispVal] -> LispVal)]
 
@@ -211,7 +211,7 @@ cons x (DottedList xs e) = DottedList (x : xs) e
 cons x y                 = DottedList [x] y
 
 car :: LispVal -> LispVal
-car (List (x:xs))     = x
+car (List (x:_))     = x
 car (DottedList xs _) = car $ List xs
 car x                 = throw $ TypeMismatch "pair" x
 

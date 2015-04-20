@@ -1,7 +1,8 @@
 module Lusp.Eval (eval
                  ,apply) where
 
-import Lusp.Environment (getVar
+import Lusp.Environment (childEnv
+                        ,getVar
                         ,setVar
                         ,defineVar
                         ,bindVars)
@@ -76,7 +77,7 @@ apply (IOFunc f) args = f args
 apply (Func params varargs body closure) args =
   if num params /= num args && isNothing varargs
      then throw $ NumArgs (show $ num params) args
-     else bindVars closure (zip params args) >>=
+     else childEnv closure >>= flip bindVars (zip params args) >>=
          bindVarArgs varargs >>= evalBody
   where remainingArgs = drop (length params) args
         num = toInteger . length

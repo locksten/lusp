@@ -8,7 +8,8 @@ import Lusp.Environment (childEnv
                         ,bindVars)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,TypeMismatch
-                                ,NumArgs))
+                                ,NumArgs
+                                ,Other))
 import Lusp.LispVal (LispVal(List
                             ,DottedList
                             ,Atom
@@ -24,9 +25,11 @@ import Lusp.LispVal (LispVal(List
                             ,Func
                             ,Void)
                     ,Env)
+import Lusp.LispValUtils (extractList)
 import Lusp.Parser (parse)
 
 import Control.Exception (throw)
+import Control.Monad (zipWithM_)
 import Data.Maybe (isNothing)
 
 eval :: Env -> LispVal -> IO LispVal
@@ -67,9 +70,21 @@ eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
     makeVarArgFunc varargs env [] body
 eval env (List (Atom "begin" : expressions)) =
     last <$> mapM (eval env) expressions
+eval env (List (Atom "let" : List bindings : body)) =
+    bindLet env bindings >>= \e -> last <$> mapM (eval e) body
 eval env (List (func : args)) = eval env func >>=
     (mapM (eval env) args >>=) . apply
 eval _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
+
+bindLet :: Env -> [LispVal] -> IO Env
+bindLet env bindings = childEnv env >>= \e ->
+      mapM (eval e) inits >>= zipWithM_ (defineVar e) vars >> return e
+  where vars = show . head <$> bindsList
+        inits = last <$> bindsList
+        bindsList = assert . extractList <$> bindings
+        assert xs = if length xs < 2
+                       then throw $ Other "strlen2"
+                       else xs
 
 apply :: LispVal -> [LispVal] -> IO LispVal
 apply (PrimitiveFunc f) args = return (f args)

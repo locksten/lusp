@@ -11,7 +11,11 @@ import Lusp.Primitives (primitiveEnv)
 
 import Control.Monad (forM)
 
-evaluate :: [LispVal] -> IO [LispVal]
+-- | Evaluates a list of expressions
+evaluate :: [LispVal]
+         -- ^ List of expressions
+         -> IO [LispVal]
+         -- ^ List of results with unprintable values filtered out
 evaluate vals = filter predicate <$> (forM vals . eval =<< primitiveEnv)
   where predicate x = not (isVoid x
                         || isPrimitiveFunc x

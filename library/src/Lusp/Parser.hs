@@ -24,6 +24,7 @@ import Data.List (elemIndices)
 import Data.Ratio ((%))
 import Numeric (readFloat, readHex, readOct)
 
+-- | Parse a single expression
 parseExpr :: Parser LispVal
 parseExpr = ignored
          *> (parseAtom
@@ -36,6 +37,8 @@ parseExpr = ignored
          <|> parseListOrDottedList)
          <*  ignored
 
+-- | Parse any number of expressions.
+-- May throw a 'Lusp.LispError.ParseError'
 parse :: String -> [LispVal]
 parse input =
     case P.parse ((ignored *> many parseExpr) <|> ignoreEOF) "" input of
@@ -43,6 +46,7 @@ parse input =
       Right val -> val
   where ignoreEOF = ignored >> return []
 
+-- | Parse and ignore whitespace and comments
 ignored :: Parser ()
 ignored = spaces *> skipMany (comment *> spaces) *> spaces
 

@@ -1,7 +1,6 @@
 module Lusp.Primitives (primitives
                        ,ioPrimitives
-                       ,primitiveEnv
-                       ,write) where
+                       ,primitiveEnv) where
 
 import Lusp.Environment (emptyEnv
                         ,bindVars)
@@ -79,14 +78,15 @@ import System.IO (IOMode(ReadMode
                  ,hPutStr)
 import System.IO.Error (isEOFError)
 
+-- | Create an Environment containing primitve functions
 primitiveEnv :: IO Env
 primitiveEnv = emptyEnv >>=
     flip bindVars ((makeF IOFunc <$> ioPrimitives) ++
                    (makeF PrimitiveFunc <$> primitives))
   where makeF constr (var, func) = (var, constr func)
 
+-- | A list of primitve functions
 primitives :: [(String, [LispVal] -> LispVal)]
-
 primitives = [("+"  ,N.add)
              ,("-"  ,N.subtract)
              ,("*"  ,N.multiply)
@@ -130,6 +130,7 @@ primitives = [("+"  ,N.add)
              ,("car"      ,singleArg car)
              ,("cdr"      ,singleArg cdr)]
 
+-- | A list of primitive IO functions
 ioPrimitives :: [(String, [LispVal] -> IO LispVal)]
 ioPrimitives = [("open-input-file"   ,makePort ReadMode)
                ,("open-output-file"  ,makePort WriteMode)
@@ -188,6 +189,7 @@ isExact :: LispVal -> Bool
 isExact x = if isNumber x then isInteger x || isRatio x
                           else throw $ TypeMismatch "number" x
 
+-- | A list of predicates representing the numeric tower of Lisp
 numberTypePredicates :: [LispVal -> Bool]
 numberTypePredicates = [LVU.isInteger, LVU.isRatio, LVU.isReal, LVU.isComplex]
 

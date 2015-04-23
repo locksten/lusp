@@ -18,12 +18,16 @@ import qualified Data.Map.Strict as Map (member
                                         ,fromList
                                         ,toList)
 
+-- | Create an empty environment
 emptyEnv :: IO Env
 emptyEnv =  (\e -> Env (Nothing, e)) <$> newIORef Map.empty
 
+-- | Create a child environment
 childEnv :: Env -> IO Env
 childEnv parent = (\e -> Env (Just parent, e)) <$> newIORef Map.empty
 
+-- | Returns whether or not a variable is bound in the environment
+-- or any of it's parents
 isBound :: Env -> String -> IO Bool
 isBound (Env(parent, env)) var = do
     inCurrent <- Map.member var <$> readIORef env
@@ -31,14 +35,26 @@ isBound (Env(parent, env)) var = do
                                Just p  -> isBound p var
     return (inCurrent || inParent)
 
-getVar :: Env -> String -> IO LispVal
+-- | Return the value of a variable
+getVar :: Env
+       -> String
+       -- ^ Variable identifier
+       -> IO LispVal
+       -- ^ Value of the variable
 getVar (Env(parent, env)) var = readIORef env >>= \curr ->
     maybe tryParent readIORef (Map.lookup var curr)
   where tryParent = case parent of
             Nothing -> throw $ UnboundVar "Getting an unboud variable" var
             Just p  -> getVar p var
 
-setVar :: Env -> String -> LispVal -> IO LispVal
+-- | Set the value of a variable
+setVar :: Env
+       -> String
+       -- ^ Variable identifier
+       -> LispVal
+       -- ^ Value to set the variable to
+       -> IO LispVal
+       -- ^ Void
 setVar (Env(parent, env)) var value = readIORef env >>= \curr ->
     maybe tryParent (\x -> (x `writeIORef` value) >> return Void)
     (Map.lookup var curr)
@@ -46,7 +62,14 @@ setVar (Env(parent, env)) var value = readIORef env >>= \curr ->
             Nothing -> throw $ UnboundVar "Setting an unbound variable" var
             Just p  -> setVar p var value
 
-defineVar :: Env -> String -> LispVal -> IO LispVal
+-- | Set the value of a variable, create it first if it doesn't exist
+defineVar :: Env
+          -> String
+          -- ^ Variable identifier
+          -> LispVal
+          -- ^ Value to set the variable to
+          -> IO LispVal
+          -- ^ Void
 defineVar env@(Env(_, curr)) var value = isBound env var >>= \alreadyDefined ->
     if alreadyDefined
        then setVar env var value
@@ -55,7 +78,11 @@ defineVar env@(Env(_, curr)) var value = isBound env var >>= \alreadyDefined ->
                writeIORef curr (Map.insert var newValue curr')
     >> return Void
 
-bindVars :: Env -> [(String, LispVal)] -> IO Env
+-- | Bind a list of variables
+bindVars :: Env
+         -> [(String, LispVal)]
+         -- ^ List of variable-value pairs to bind
+         -> IO Env
 bindVars (Env(parent, env)) bindings = readIORef env >>= doExtend >>=
         (toFullEnv <$>) . newIORef
   where doExtend env' = Map.fromList <$> extendEnv bindings (Map.toList env')

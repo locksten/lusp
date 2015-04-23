@@ -60,7 +60,13 @@ import qualified Data.Ratio as D ((%)
                                   ,denominator
                                   ,approxRational)
 
-numCast :: LispVal -> LispVal -> (LispVal, LispVal)
+-- | Cast one of the numbers to the level of the numeric tower the other is at
+numCast :: LispVal
+        -- ^ Number
+        -> LispVal
+        -- ^ Number
+        -> (LispVal, LispVal)
+        -- ^ The numbers brought to the same level of the numeric tower
 numCast a@(Integer _) b@(Integer _) = (a, b)
 numCast a@(Ratio   _) b@(Ratio   _) = (a, b)
 numCast a@(Real    _) b@(Real    _) = (a, b)
@@ -90,6 +96,7 @@ ratioToComplex (Ratio x) = Complex $ fromInteger (D.numerator x)
                                    / fromInteger (D.denominator x)
 ratioToComplex _ = error "Expected Ratio"
 
+-- | Throw an exception if the argument is not a number.
 assertIsNumber :: LispVal -> LispVal
 assertIsNumber x@(Integer _) = x
 assertIsNumber x@(Ratio   _) = x
@@ -147,6 +154,8 @@ divide params = foldl1 (\x y -> div $ numCast x y) params
         div _ = error "Expected Number"
         err = throw DivBy0
 
+-- | Returns an 'Data.Ord.Ord' comparison of the two numbers.
+-- Throws an error if one of the arguments is a Complex.
 compare :: LispVal -> LispVal -> Ordering
 compare a b = comp $ numCast a b
   where comp (Integer x, Integer y) = x `P.compare` y
@@ -161,8 +170,6 @@ equal x y = compare x y == EQ
 
 equalElems :: [LispVal] -> Bool
 equalElems xs = null xs || and ((head xs `equal`) <$> xs)
--- equalElems xs = if null xs then True
---                            else and $ (head xs `equal`) <$> xs
 
 equalLists :: [LispVal] -> [LispVal] -> Bool
 equalLists xs ys = (length xs == length ys) && and (zipWith equal xs ys)

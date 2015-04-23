@@ -18,14 +18,18 @@ data LispVal = Atom String
              | String String
              | Char Char
              | Bool Bool
+          -- | Undefined return type
              | Void
              | PrimitiveFunc ([LispVal] -> LispVal)
              | IOFunc ([LispVal] -> IO LispVal)
+          -- | User defined function
              | Func [String] (Maybe String) [LispVal] Env
              | Port Handle
              | EOF
 instance Show LispVal where show = showLispVal
 
+-- | Environment type containing the parent environment
+-- and variables as name-value pairs
 data Env = Env (Maybe Env, IORef (Map.Map String (IORef LispVal)))
 
 showLispVal :: LispVal -> String

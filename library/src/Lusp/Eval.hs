@@ -33,12 +33,19 @@ import Control.Exception (throw
 import Control.Monad (zipWithM_)
 import Data.Maybe (isNothing)
 
+-- | Wraps 'Lusp.Eval.eval'' for creating a stack trace
 eval :: Env -> LispVal -> IO LispVal
 eval env val = catch (eval' env val) (care val)
   where care :: LispVal -> LispError -> IO LispVal
         care v e = throw $ StackTrace e v
 
-eval' :: Env -> LispVal -> IO LispVal
+-- | Evaluates an expression
+eval' :: Env
+      -- ^ Environment in which to evaluate the expression
+      -> LispVal
+      -- ^ Expression to evaluate
+      -> IO LispVal
+      -- ^ Result of the expression
 eval' _   v@(String _)  = return v
 eval' _   v@(Integer _) = return v
 eval' _   v@(Real _)    = return v
@@ -83,7 +90,13 @@ eval' env (List (func : args)) = eval env func >>=
     (mapM (eval env) args >>=) . apply
 eval' _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
 
-bindLet :: Env -> [LispVal] -> IO Env
+-- | Evaluate let bindings
+bindLet :: Env
+        -- ^ Environment
+        -> [LispVal]
+        -- ^ List of (<var> <expr>)
+        -> IO Env
+        -- ^ Child environmen with the new bindings
 bindLet env bindings = childEnv env >>= \e ->
       mapM (eval e) inits >>= zipWithM_ (defineVar e) vars >> return e
   where vars = show . head <$> bindsList
@@ -94,7 +107,13 @@ bindLet env bindings = childEnv env >>= \e ->
                        then throw $ TypeMismatch "(<var> <expr>)" xs
                        else extractList xs
 
-apply :: LispVal -> [LispVal] -> IO LispVal
+-- | Apply the function to the arguments
+apply :: LispVal
+      -- ^ Function
+      -> [LispVal]
+      -- ^ Arguments
+      -> IO LispVal
+      -- ^ Result
 apply (PrimitiveFunc f) args = return (f args)
 apply (IOFunc f) args = f args
 apply (Func params varargs body closure) args =

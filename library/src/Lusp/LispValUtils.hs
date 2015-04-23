@@ -6,6 +6,10 @@ module Lusp.LispValUtils (prettyPrint
                          ,isReal
                          ,isRatio
                          ,isComplex
+                         ,isPrimitiveFunc
+                         ,isIOFunc
+                         ,isFunc
+                         ,isPort
                          ,extractList) where
 
 import Lusp.LispError (LispError(ParseError
@@ -19,7 +23,11 @@ import Lusp.LispVal (LispVal(List
                             ,Real
                             ,Ratio
                             ,Complex
-                            ,Atom))
+                            ,Atom
+                            ,PrimitiveFunc
+                            ,IOFunc
+                            ,Func
+                            ,Port))
 import Lusp.Parser (parseString)
 
 import Control.Exception (throw)
@@ -40,6 +48,22 @@ isSymbol _        = False
 isVoid :: LispVal -> Bool
 isVoid Void = True
 isVoid _    = False
+
+isFunc :: LispVal -> Bool
+isFunc (Func {}) = True
+isFunc _         = False
+
+isIOFunc :: LispVal -> Bool
+isIOFunc (IOFunc _) = True
+isIOFunc _          = False
+
+isPrimitiveFunc :: LispVal -> Bool
+isPrimitiveFunc (PrimitiveFunc _) = True
+isPrimitiveFunc _                 = False
+
+isPort :: LispVal -> Bool
+isPort (Port _) = True
+isPort _        = False
 
 isEOF :: LispVal -> Bool
 isEOF EOF = True

@@ -10,7 +10,12 @@ import Lusp.LispError (LispError(NumArgs
                                 ,Other))
 import Lusp.LispVal (LispVal(List
                             ,DottedList
+                            ,Integer
+                            ,Real
+                            ,Ratio
+                            ,Complex
                             ,Atom
+                            ,Vector
                             ,Bool
                             ,String
                             ,Char
@@ -120,6 +125,9 @@ primitives = [("+"  ,N.add)
              ,("exact?"      ,predicate isExact)
              ,("inexact?"    ,predicate (not . isExact))
              ,("pair?"       ,predicate isPair)
+             ,("eqv?"        ,binaryPredicate eqv)
+             ,("eq?"         ,binaryPredicate eqv)
+             ,("equal?"      ,binaryPredicate eqv)
              ,("inexact->exact" ,singleArg N.inexactToExact)
              ,("exact->inexact" ,singleArg N.exactToInexact)
              ,("symbol->string" ,singleArg symbolToString)
@@ -169,6 +177,28 @@ listPredicate op xs = if length xs >= 2
 predicate :: (LispVal -> Bool) -> [LispVal] -> LispVal
 predicate pred' [x] = Bool $ pred' x
 predicate _ x       = throw $ NumArgs "1" x
+
+binaryPredicate :: (LispVal -> LispVal -> Bool) -> [LispVal] -> LispVal
+binaryPredicate pred' [x, y] = Bool $ pred' x y
+binaryPredicate _ x          = throw $ NumArgs "2" x
+
+eqv :: LispVal -> LispVal -> Bool
+eqv (List a) (List b) = length a == length b && and (zipWith eqv a b)
+eqv (DottedList as a) (DottedList bs b) = eqv (List as) (List bs) && eqv a b
+eqv (Vector a) (Vector b) = length a == length b && and (zipWith eqv a b)
+eqv (Bool a) (Bool b) = a == b
+eqv (Atom a) (Atom b) = a == b
+eqv (Char a) (Char b) = a == b
+eqv (String a) (String b) = a == b
+eqv a@(Integer _) b@(Integer _) = N.equalElems [a, b]
+eqv a@(Ratio _)   b@(Ratio _)   = N.equalElems [a, b]
+eqv a@(Integer _) b@(Ratio _)   = N.equalElems [a, b]
+eqv a@(Ratio _)   b@(Integer _) = N.equalElems [a, b]
+eqv a@(Real _)    b@(Real _)    = N.equalElems [a, b]
+eqv a@(Complex _) b@(Complex _) = N.equalElems [a, b]
+eqv a@(Complex _) b@(Real _)    = N.equalElems [a, b]
+eqv a@(Real _)    b@(Complex _) = N.equalElems [a, b]
+eqv _ _                         = False
 
 isNumber :: LispVal -> Bool
 isNumber x = or $ ($ x) <$> numberTypePredicates

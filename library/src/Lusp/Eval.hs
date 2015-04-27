@@ -5,6 +5,7 @@ import Lusp.Environment (childEnv
                         ,getVar
                         ,setVar
                         ,defineVar
+                        ,isBound
                         ,bindVars)
 import Lusp.LispError (LispError(BadSpecialForm
                                 ,TypeMismatch
@@ -69,6 +70,8 @@ eval' env (List [Atom "if", predicate, consequnce]) =
          _          -> return Void
 eval' env (List [Atom "set!", Atom var, form]) = eval env form
     >>= setVar env var
+eval' env (List (Atom "define-macro" : Atom keyword : [body])) =
+    defineVar env (macroPrefix ++ keyword) body
 eval' env (List [Atom "define", Atom var, form]) = eval env form
     >>= defineVar env var
 eval' env (List (Atom "define" : List (Atom var : params) : body)) =
@@ -86,9 +89,17 @@ eval' env (List (Atom "begin" : expressions)) =
     last <$> mapM (eval env) expressions
 eval' env (List (Atom "let" : List bindings : body)) =
     bindLet env bindings >>= \e -> last <$> mapM (eval e) body
-eval' env (List (func : args)) = eval env func >>=
-    (mapM (eval env) args >>=) . apply
+eval' env (List (Atom func : args)) = isBound env prefixed >>= \bound ->
+    if bound then handleMacro else handleFunc
+  where prefixed = macroPrefix ++ func
+        handleFunc = eval env (Atom func) >>= (mapM (eval env) args >>=) . apply
+        handleMacro = getVar env prefixed >>= \f ->
+          eval env (List [Atom "apply", f, List [Atom "quote", List args]])
+          >>= \again -> eval env again
 eval' _  badForm = throw $ BadSpecialForm "Unrecognized special form" badForm
+
+macroPrefix :: String
+macroPrefix = "MACRO-"
 
 -- | Evaluate let bindings
 bindLet :: Env

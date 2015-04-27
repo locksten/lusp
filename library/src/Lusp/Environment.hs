@@ -3,7 +3,8 @@ module Lusp.Environment (emptyEnv
                         ,getVar
                         ,setVar
                         ,defineVar
-                        ,bindVars) where
+                        ,bindVars
+                        ,isBound) where
 
 import Lusp.LispError (LispError(UnboundVar))
 import Lusp.LispVal (LispVal(Void)

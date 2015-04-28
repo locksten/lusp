@@ -61,13 +61,13 @@ eval' env (List [Atom "load", String filename]) =
 eval' env (List [Atom "if", predicate, consequnce, alternative]) =
     eval env predicate >>= \res ->
        case res of
-         Bool True  -> eval env consequnce
-         _          -> eval env alternative
+         Bool False -> eval env alternative
+         _          -> eval env consequnce
 eval' env (List [Atom "if", predicate, consequnce]) =
     eval env predicate >>= \res ->
        case res of
-         Bool True  -> eval env consequnce
-         _          -> return Void
+         Bool False -> return Void
+         _          -> eval env consequnce
 eval' env (List [Atom "set!", Atom var, form]) = eval env form
     >>= setVar env var
 eval' env (List (Atom "define-macro" : Atom keyword : [body])) =

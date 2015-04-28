@@ -89,6 +89,7 @@ eval' env (List (Atom "begin" : expressions)) =
     last <$> mapM (eval env) expressions
 eval' env (List (Atom "let" : List bindings : body)) =
     bindLet env bindings >>= \e -> last <$> mapM (eval e) body
+eval' env (List (Atom "eval" : [expr])) = eval env expr >>= eval env
 eval' env (List (Atom func : args)) = isBound env prefixed >>= \bound ->
     if bound then handleMacro else handleFunc
   where prefixed = macroPrefix ++ func

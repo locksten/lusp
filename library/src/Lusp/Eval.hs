@@ -56,6 +56,13 @@ eval' _   v@(Bool _)    = return v
 eval' _   v@(Char _)    = return v
 eval' env (Atom v)      = getVar env v
 eval' _   (List [Atom "quote", v]) = return v
+eval' env (List [Atom "quasiquote", List xs]) =
+    eval env (List (Atom "append" : (enquote <$> xs)))
+  where enquote x = case x of
+            List [Atom "unquote", y]          -> List [Atom "list", y]
+            List [Atom "unquote-splicing", y] -> y
+            _                                 ->
+              List [Atom "list", List [Atom "quote", x]]
 eval' env (List [Atom "load", String filename]) =
     parse <$> readFile filename >>= mapM_ (eval env) >> return Void
 eval' env (List [Atom "if", predicate, consequnce, alternative]) =

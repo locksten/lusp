@@ -33,7 +33,7 @@ parseExpr = ignored
          <|> parseNumber
          <|> parseQuoted
          <|> parseQuasiQuoted
-         <|> parseUnQuote
+         <|> parseUnQuoteOrSpliced
          <|> parseListOrDottedList)
          <*  ignored
 
@@ -163,8 +163,14 @@ parseQuasiQuoted :: Parser LispVal
 parseQuasiQuoted = (\x -> List [Atom "quasiquote", x]) <$>
                    (char '`' *> parseExpr)
 
-parseUnQuote :: Parser LispVal
-parseUnQuote = (\x -> List [Atom "unquote", x]) <$> (char ',' *> parseExpr)
+parseUnQuoteOrSpliced :: Parser LispVal
+parseUnQuoteOrSpliced = do
+    _ <- char ','
+    at <- try $ optionMaybe $ char '@'
+    expr <- parseExpr
+    case at of
+      Just _  -> return $ List [Atom "unquote-splicing", expr]
+      Nothing -> return $ List [Atom "unquote", expr]
 
 comment :: Parser ()
 comment = char ';' *>

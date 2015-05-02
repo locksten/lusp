@@ -77,6 +77,24 @@ eval' env (List [Atom "if", predicate, consequnce]) =
          _          -> eval env consequnce
 eval' env (List [Atom "set!", Atom var, form]) = eval env form
     >>= setVar env var
+
+eval' env (List [Atom "set-car!", Atom var, form]) = eval env form >>= \new ->
+    getVar env var >>= \old ->
+      case old of
+        List (_:xs)         -> setVar env var $ List (new : xs)
+        DottedList (_:xs) e -> setVar env var $ DottedList (new : xs) e
+        x                   -> throw $ TypeMismatch "pair" x
+eval' env (List [Atom "set-cdr!", Atom var, form]) = eval env form >>= \new ->
+    getVar env var >>= \old ->
+      case new of
+        List n         -> setVar env var $ List (first old : n)
+        DottedList n e -> setVar env var $ DottedList (first old : n) e
+        n              -> setVar env var $ DottedList [first old] n
+  where
+      first x = case x of
+                  List (y:_)         -> y
+                  DottedList (y:_) _ -> y
+                  y                  -> throw $ TypeMismatch "pair" y
 eval' env (List (Atom "define-macro" : Atom keyword : [body])) =
     defineVar env (macroPrefix ++ keyword) body
 eval' env (List [Atom "define", Atom var, form]) = eval env form

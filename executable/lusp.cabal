@@ -18,5 +18,6 @@ executable scheme
 -- other-extensions:
   build-depends:       base == 4.8.*
                       ,lusp-lib == 0.1.*
+                      ,directory == 1.2.*
   hs-source-dirs:      src
   default-language:    Haskell2010

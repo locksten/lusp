@@ -13,6 +13,7 @@ data LispError = NumArgs String [LispVal]
                | UnboundVar String String
                | DivBy0
                | Other String
+               | ErrorCommand String
                | StackTrace LispError LispVal
 instance Show LispError where show = showError
 instance Exception LispError
@@ -28,6 +29,7 @@ showError (TypeMismatch expected found) = "Invalid type: expected " ++ expected
 showError (ParseError parseErr) = "Parse error at " ++ show parseErr
 showError (DivBy0)              = "Attempted division by 0"
 showError (Other str)           = show str
+showError (ErrorCommand str)    = "Error: " ++ show str
 showError e@(StackTrace _ _)    = "\n > Stack Trace:\n" ++ showStackTrace e
 
 showStackTrace :: LispError -> String

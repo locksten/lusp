@@ -7,6 +7,7 @@ import Lusp.Environment (emptyEnv
 import qualified Lusp.Eval as Eval (apply)
 import Lusp.LispError (LispError(NumArgs
                                 ,TypeMismatch
+                                ,ErrorCommand
                                 ,Other))
 import Lusp.LispVal (LispVal(List
                             ,DottedList
@@ -154,6 +155,7 @@ ioPrimitives = [("open-input-file"   ,makePort ReadMode)
                ,("write-char"   ,output writeChar)
                ,("display"      ,output display)
                ,("newline"      ,outputConstant "\n")
+               ,("error"        ,errorCommand)
                ,("apply" ,apply)
                ,("map"   ,map)]
 
@@ -301,6 +303,12 @@ write hdl = hPutStr hdl . show
 
 display :: Handle -> LispVal -> IO ()
 display hdl = hPutStr hdl . LVU.prettyPrint
+
+errorCommand :: [LispVal] -> IO LispVal
+errorCommand [] = (throw $ ErrorCommand $ LVU.prettyPrint $ String "")
+    >> return Void
+errorCommand [msg] = (throw $ ErrorCommand $ LVU.prettyPrint msg) >> return Void
+errorCommand x = throw $ NumArgs "0 or 1" x
 
 writeChar :: Handle -> LispVal -> IO ()
 writeChar hdl (Char c) = hPutStr hdl [c]

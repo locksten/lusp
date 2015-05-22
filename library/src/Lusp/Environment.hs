@@ -4,10 +4,13 @@ module Lusp.Environment (emptyEnv
                         ,setVar
                         ,defineVar
                         ,bindVars
-                        ,isBound) where
+                        ,isBound
+                        ,bindMetaVars) where
 
 import Lusp.LispError (LispError(UnboundVar))
-import Lusp.LispVal (LispVal(Void)
+import Lusp.LispVal (LispVal(Void
+                            ,String
+                            ,List)
                     ,Env(Env))
 
 import Control.Exception (throw)
@@ -18,6 +21,8 @@ import qualified Data.Map.Strict as Map (member
                                         ,insert
                                         ,fromList
                                         ,toList)
+import System.FilePath (takeDirectory
+                       ,normalise)
 
 -- | Create an empty environment
 emptyEnv :: IO Env
@@ -90,3 +95,14 @@ bindVars (Env(parent, env)) bindings = readIORef env >>= doExtend >>=
         extendEnv bindings' env' = (++ env') <$> mapM addBinding bindings'
         addBinding (var, value) = (\x -> (var, x)) <$> newIORef value
         toFullEnv x = Env (parent, x)
+
+bindMetaVars :: Env
+             -> String
+             -- ^ Path to the source code file
+             -> [String]
+             -- ^ Command line arguments
+             -> IO Env
+bindMetaVars env path args =
+    bindVars env [("source-file-path", String path)
+                 ,("source-dir-path", String (normalise $ takeDirectory path))
+                 ,("command-line", List $ String <$> args)]

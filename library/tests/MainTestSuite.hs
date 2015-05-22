@@ -47,7 +47,7 @@ tests =
     ]
   ]
 
-testLuspExpr expr result = (evaluate . parse) expr >>= \x ->
+testLuspExpr expr result = (evaluate "" [] . parse) expr >>= \x ->
     result @=? showLast x
       where showLast xs = if null xs then "" else (show . last) xs
 

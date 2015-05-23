@@ -10,7 +10,10 @@ module Lusp.LispValUtils (prettyPrint
                          ,isIOFunc
                          ,isFunc
                          ,isPort
-                         ,extractList) where
+                         ,extractList
+                         ,extractChar
+                         ,extractInt
+                         ,extractStr) where
 
 import Lusp.LispError (LispError(ParseError
                                 ,TypeMismatch))
@@ -88,3 +91,15 @@ isComplex _           = False
 extractList :: LispVal -> [LispVal]
 extractList (List x) = x
 extractList x        = throw $ TypeMismatch "List" x
+
+extractChar :: LispVal -> Char
+extractChar (Char x) = x
+extractChar x        = throw $ TypeMismatch "Char" x
+
+extractInt :: LispVal -> Integer
+extractInt (Integer x) = x
+extractInt x           = throw $ TypeMismatch "Integer" x
+
+extractStr :: LispVal -> String
+extractStr (String x) = x
+extractStr x          = throw $ TypeMismatch "String" x

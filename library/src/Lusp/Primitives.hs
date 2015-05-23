@@ -28,6 +28,9 @@ import Lusp.LispVal (LispVal(List
                     ,Env)
 import qualified Lusp.LispValUtils as LVU (prettyPrint
                                           ,extractList
+                                          ,extractChar
+                                          ,extractInt
+                                          ,extractStr
                                           ,isSymbol
                                           ,isEOF
                                           ,isInteger
@@ -66,7 +69,16 @@ import Prelude hiding (read
 
 import Control.Exception (throw
                          ,catch)
-import Data.List (transpose)
+import Data.Char (isSpace
+                 ,isLower
+                 ,isUpper
+                 ,isDigit
+                 ,toUpper
+                 ,toLower
+                 ,digitToInt
+                 ,intToDigit)
+import Data.List (transpose
+                 ,sort)
 import System.IO (IOMode(ReadMode
                         ,WriteMode)
                  ,Handle
@@ -93,51 +105,87 @@ primitiveEnv = emptyEnv >>=
 
 -- | A list of primitve functions
 primitives :: [(String, [LispVal] -> LispVal)]
-primitives = [("+"  ,N.add)
-             ,("-"  ,N.subtract)
-             ,("*"  ,N.multiply)
-             ,("/"  ,N.divide)
-             ,("="  ,listPredicate N.equalElems)
-             ,("<"  ,listPredicate N.increasing)
-             ,(">"  ,listPredicate N.decreasing)
-             ,("<=" ,listPredicate N.nonDecreasing)
-             ,(">=" ,listPredicate N.nonIncreasing)
-             ,("numerator"   ,singleArg N.numerator)
-             ,("denominator" ,singleArg N.denominator)
-             ,("floor"       ,singleArg N.floor)
-             ,("ceiling"     ,singleArg N.ceiling)
-             ,("truncate"    ,singleArg N.truncate)
-             ,("round"       ,singleArg N.round)
-             ,("sqrt"        ,singleArg N.sqrt)
-             ,("log"         ,singleArg N.log)
-             ,("exp"         ,singleArg N.exp)
-             ,("expt"        ,twoArg N.expt)
-             ,("modulo"      ,N.modulo)
-             ,("remainder"   ,N.remainder)
-             ,("quotient"    ,N.quotient)
-             ,("eof-object?" ,predicate LVU.isEOF)
-             ,("symbol?"     ,predicate LVU.isSymbol)
-             ,("number?"     ,predicate isNumber)
-             ,("complex?"    ,predicate isComplex)
-             ,("real?"       ,predicate isReal)
-             ,("rational?"   ,predicate isRatio)
-             ,("integer?"    ,predicate isInteger)
-             ,("rational?"   ,predicate isRatio)
-             ,("exact?"      ,predicate isExact)
-             ,("inexact?"    ,predicate (not . isExact))
-             ,("pair?"       ,predicate isPair)
-             ,("eqv?"        ,binaryPredicate eqv)
-             ,("eq?"         ,binaryPredicate eqv)
-             ,("equal?"      ,binaryPredicate eqv)
-             ,("inexact->exact" ,singleArg N.inexactToExact)
-             ,("exact->inexact" ,singleArg N.exactToInexact)
-             ,("symbol->string" ,singleArg symbolToString)
-             ,("string->symbol" ,singleArg stringToSymbol)
-             ,("current-input-port"  ,argumentless $ Port stdin)
-             ,("current-output-port" ,argumentless $ Port stdout)
-             ,("cons"     ,twoArg cons)
-             ,("car"      ,singleArg car)
-             ,("cdr"      ,singleArg cdr)]
+primitives =
+    [("+"  ,N.add)
+    ,("-"  ,N.subtract)
+    ,("*"  ,N.multiply)
+    ,("/"  ,N.divide)
+    ,("="  ,listPredicate N.equalElems)
+    ,("<"  ,listPredicate N.increasing)
+    ,(">"  ,listPredicate N.decreasing)
+    ,("<=" ,listPredicate N.nonDecreasing)
+    ,(">=" ,listPredicate N.nonIncreasing)
+    ,("char=?"        ,listPredicate $ equal eC)
+    ,("char<?"        ,listPredicate $ increasing eC)
+    ,("char>?"        ,listPredicate $ decreasing eC)
+    ,("char<=?"       ,listPredicate $ nonDecreasing eC)
+    ,("char>=?"       ,listPredicate $ nonIncreasing eC)
+    ,("string=?"      ,predicate $ equal eC . strToLChars)
+    ,("string<?"      ,predicate $ increasing eC . strToLChars)
+    ,("string>?"      ,predicate $ decreasing eC . strToLChars)
+    ,("string<=?"     ,predicate $ nonDecreasing eC . strToLChars)
+    ,("string>=?"     ,predicate $ nonIncreasing eC . strToLChars)
+    ,("char-ci=?"     ,listPredicate $ equal $ ci . eC)
+    ,("char-ci<?"     ,listPredicate $ increasing $ ci . eC)
+    ,("char-ci>?"     ,listPredicate $ decreasing $ ci . eC)
+    ,("char-ci<=?"    ,listPredicate $ nonDecreasing $ ci . eC)
+    ,("char-ci>=?"    ,listPredicate $ nonIncreasing $ ci . eC)
+    ,("string-ci=?"   ,predicate $ equal eC . ciStrToLChars)
+    ,("string-ci<?"   ,predicate $ increasing eC . ciStrToLChars)
+    ,("string-ci>?"   ,predicate $ decreasing eC . ciStrToLChars)
+    ,("string-ci<=?"  ,predicate $ nonDecreasing eC . ciStrToLChars)
+    ,("string-ci>=?"  ,predicate $ nonIncreasing eC . ciStrToLChars)
+    ,("numerator"     ,singleArg N.numerator)
+    ,("denominator"   ,singleArg N.denominator)
+    ,("floor"         ,singleArg N.floor)
+    ,("ceiling"       ,singleArg N.ceiling)
+    ,("truncate"      ,singleArg N.truncate)
+    ,("round"         ,singleArg N.round)
+    ,("sqrt"          ,singleArg N.sqrt)
+    ,("log"           ,singleArg N.log)
+    ,("exp"           ,singleArg N.exp)
+    ,("expt"          ,twoArg N.expt)
+    ,("modulo"        ,N.modulo)
+    ,("remainder"     ,N.remainder)
+    ,("quotient"      ,N.quotient)
+    ,("char-upcase"      ,singleArg (Char . toUpper . eC))
+    ,("char-downcase"    ,singleArg (Char . toLower . eC))
+    ,("char-whitespace?" ,predicate (isSpace . eC))
+    ,("char-lower-case?" ,predicate (isLower . eC))
+    ,("char-upper-case?" ,predicate (isUpper . eC))
+    ,("char-numeric?"    ,predicate (isDigit . eC))
+    ,("eof-object?" ,predicate LVU.isEOF)
+    ,("symbol?"     ,predicate LVU.isSymbol)
+    ,("number?"     ,predicate isNumber)
+    ,("complex?"    ,predicate isComplex)
+    ,("real?"       ,predicate isReal)
+    ,("rational?"   ,predicate isRatio)
+    ,("integer?"    ,predicate isInteger)
+    ,("rational?"   ,predicate isRatio)
+    ,("exact?"      ,predicate isExact)
+    ,("inexact?"    ,predicate (not . isExact))
+    ,("pair?"       ,predicate isPair)
+    ,("eqv?"        ,binaryPredicate eqv)
+    ,("eq?"         ,binaryPredicate eqv)
+    ,("equal?"      ,binaryPredicate eqv)
+    ,("inexact->exact"      ,singleArg N.inexactToExact)
+    ,("exact->inexact"      ,singleArg N.exactToInexact)
+    ,("char->integer"       ,singleArg (Integer . toInteger . digitToInt . eC))
+    ,("integer->char"       ,singleArg (Char . intToDigit . fromInteger . LVU.extractInt))
+    ,("symbol->string"      ,singleArg symbolToString)
+    ,("string->symbol"      ,singleArg stringToSymbol)
+    ,("number->string"      ,singleArg numberToString)
+    ,("string->list"        ,singleArg stringToList)
+    ,("list->string"        ,singleArg listToString)
+    ,("current-input-port"  ,argumentless $ Port stdin)
+    ,("current-output-port" ,argumentless $ Port stdout)
+    ,("cons"  ,twoArg cons)
+    ,("car"   ,singleArg car)
+    ,("cdr"   ,singleArg cdr)]
+  where strToLChars   = fmap Char . LVU.extractStr
+        ciStrToLChars = fmap Char . fmap ci . LVU.extractStr
+        eC = LVU.extractChar
+        ci = toLower
 
 -- | A list of primitive IO functions
 ioPrimitives :: [(String, [LispVal] -> IO LispVal)]
@@ -183,6 +231,26 @@ predicate _ x       = throw $ NumArgs "1" x
 binaryPredicate :: (LispVal -> LispVal -> Bool) -> [LispVal] -> LispVal
 binaryPredicate pred' [x, y] = Bool $ pred' x y
 binaryPredicate _ x          = throw $ NumArgs "2" x
+
+nonDecreasing :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
+nonDecreasing ex as = (ex <$> as) == sort (ex <$> as)
+
+nonIncreasing :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
+nonIncreasing ex as = (ex <$> as) == (reverse . sort) (ex <$> as)
+
+equal :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
+equal ex as = (ex <$> as) == reverse (ex <$> as)
+
+increasing :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
+increasing ex as = nonDecreasing ex as && elemsUnique ex as
+
+decreasing :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
+decreasing ex as = nonIncreasing ex as && elemsUnique ex as
+
+elemsUnique :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
+elemsUnique ex [a, b]   = not (ex a == ex b)
+elemsUnique ex (a:b:cs) = not (ex a == ex b) && elemsUnique ex (b:cs)
+elemsUnique _ xs        = length xs < 2
 
 eqv :: LispVal -> LispVal -> Bool
 eqv (List a) (List b) = length a == length b && and (zipWith eqv a b)
@@ -233,6 +301,18 @@ stringToSymbol :: LispVal -> LispVal
 stringToSymbol (String x) = Atom x
 stringToSymbol x          = throw $ TypeMismatch "string" x
 
+numberToString :: LispVal -> LispVal
+numberToString x = if isNumber x then String $ show x
+                                 else throw $ TypeMismatch "number as string" x
+
+listToString :: LispVal -> LispVal
+listToString (List xs) = String $ LVU.extractChar <$> xs
+listToString x         = throw $ TypeMismatch "list" x
+
+stringToList :: LispVal -> LispVal
+stringToList (String xs) = List $ Char <$> xs
+stringToList x           = throw $ TypeMismatch "string" x
+
 isPair :: LispVal -> Bool
 isPair (List xs)         = (not . null) xs
 isPair (DottedList xs _) = isPair $ List xs
@@ -282,7 +362,6 @@ read [String str] = return $ (top . parse) str
   where top xs = if null xs then EOF else head xs
 read [x]          = throw $ TypeMismatch "<IO port> or String" x
 read x            = throw $ NumArgs "0 or 1" x
-
 
 inputChar :: (Handle -> IO Char) -> Handle -> IO LispVal
 inputChar op hdl = hReady hdl >>= \ready ->

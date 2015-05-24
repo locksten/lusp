@@ -1,8 +1,10 @@
 import Lusp.Evaluate (evaluate
                      ,initialEnv)
+import Lusp.LispError (LispError)
 import Lusp.LispVal (Env)
 import Lusp.Parser (parse)
 
+import Control.Exception (catch)
 import Data.Version (showVersion)
 import System.FilePath ((</>)
                        ,addTrailingPathSeparator)
@@ -69,5 +71,7 @@ repl env = do
       Nothing     -> return ()
       Just "exit" -> return ()
       Just line   -> do addHistory line
-                        showEval env line
+                        catch (showEval env line) care
                         repl env
+  where care :: LispError -> IO ()
+        care e = print e

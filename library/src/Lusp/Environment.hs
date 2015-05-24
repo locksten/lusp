@@ -22,7 +22,8 @@ import qualified Data.Map.Strict as Map (member
                                         ,fromList
                                         ,toList)
 import System.FilePath (takeDirectory
-                       ,normalise)
+                       ,normalise
+                       ,addTrailingPathSeparator)
 
 -- | Create an empty environment
 emptyEnv :: IO Env
@@ -104,5 +105,6 @@ bindMetaVars :: Env
              -> IO Env
 bindMetaVars env path args =
     bindVars env [("source-file-path", String path)
-                 ,("source-dir-path", String (normalise $ takeDirectory path))
+                 ,("source-dir-path", String
+                  (addTrailingPathSeparator $ normalise $ takeDirectory path))
                  ,("command-line", List $ String <$> args)]

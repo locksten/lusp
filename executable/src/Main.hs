@@ -4,6 +4,8 @@ import Lusp.LispVal (Env)
 import Lusp.Parser (parse)
 
 import Data.Version (showVersion)
+import System.FilePath ((</>)
+                       ,addTrailingPathSeparator)
 import Paths_lusp (version)
 import System.Console.Readline (readline
                                ,addHistory)
@@ -16,7 +18,8 @@ import System.Exit (exitFailure
 main :: IO ()
 main = do
     opt <- safeArg 0
-    let initEnv = getCurrentDirectory >>= \d -> initialEnv d []
+    let initEnv = getCurrentDirectory >>= \d -> initialEnv (d </> "STDIN")
+                  [addTrailingPathSeparator d]
     case opt of
       "-r"        -> initEnv >>= repl
       "-p"        -> safeArg 1 >>= showParse
@@ -29,7 +32,7 @@ main = do
         if exists then do
                   str <- readFile file
                   args <- getArgs
-                  cwd <- getCurrentDirectory
+                  cwd <- addTrailingPathSeparator <$> getCurrentDirectory
                   env <- initialEnv file (cwd : tail args)
                   execute env str
                   else putStrLn ("The file \"" ++ file ++ "\" does not exist")

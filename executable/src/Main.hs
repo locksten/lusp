@@ -3,6 +3,8 @@ import Lusp.Evaluate (evaluate
 import Lusp.LispVal (Env)
 import Lusp.Parser (parse)
 
+import Data.Version (showVersion)
+import Paths_lusp (version)
 import System.Console.Readline (readline
                                ,addHistory)
 import System.Directory (doesFileExist
@@ -16,11 +18,13 @@ main = do
     opt <- safeArg 0
     let initEnv = getCurrentDirectory >>= \d -> initialEnv d []
     case opt of
-      "-r"     -> initEnv >>= repl
-      "-p"     -> safeArg 1 >>= showParse
-      "-e"     -> (safeArg 1 >>=) . showEval =<< initEnv
-      "-h"     -> usageAndExit
-      "--help" -> usageAndExit
+      "-r"        -> initEnv >>= repl
+      "-p"        -> safeArg 1 >>= showParse
+      "-e"        -> (safeArg 1 >>=) . showEval =<< initEnv
+      "-h"        -> usageAndExit
+      "--help"    -> usageAndExit
+      "-v"        -> versionAndExit
+      "--version" -> versionAndExit
       file     -> doesFileExist file >>= \exists ->
         if exists then do
                   str <- readFile file
@@ -33,6 +37,8 @@ main = do
   where safeArg n = (length <$> getArgs) >>= \len ->
           if len < n + 1 then usageAndExit
                          else (!! n) <$> getArgs
+        versionAndExit = putStrLn ("lusp " ++ showVersion version)
+            >> exitSuccess
         usageAndExit = putStrLn "Usage: \n\
       \ filename args  execute a file\n\
       \-r              start the repl\n\

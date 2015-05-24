@@ -15,12 +15,12 @@ cabal-version:       >= 1.10
 library
   exposed-modules:   Lusp.Evaluate
                     ,Lusp.Parser
+                    ,Lusp.LispVal
 
   other-modules:     Lusp.Environment
                     ,Lusp.Primitives
                     ,Lusp.Eval
                     ,Lusp.LispError
-                    ,Lusp.LispVal
                     ,Lusp.Numeric
                     ,Lusp.LispValUtils
 

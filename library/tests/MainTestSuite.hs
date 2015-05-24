@@ -6,7 +6,8 @@ import Test.HUnit (assertEqual
                   ,(@=?))
 
 import Lusp.Parser (parse)
-import Lusp.Evaluate (evaluate)
+import Lusp.Evaluate (evaluate
+                     ,initialEnv)
 
 main :: IO ()
 main = defaultMain tests
@@ -47,7 +48,7 @@ tests =
     ]
   ]
 
-testLuspExpr expr result = (evaluate "" [] . parse) expr >>= \x ->
+testLuspExpr expr result = initialEnv "" [] >>= \e -> (evaluate e . parse) expr >>= \x ->
     result @=? showLast x
       where showLast xs = if null xs then "" else (show . last) xs
 

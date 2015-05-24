@@ -26,13 +26,15 @@ import Lusp.LispVal (LispVal(List
                             ,Func
                             ,Void)
                     ,Env)
-import Lusp.LispValUtils (extractList)
+import Lusp.LispValUtils (extractList
+                         ,extractStr)
 import Lusp.Parser (parse)
 
 import Control.Exception (throw
                          ,catch)
 import Control.Monad (zipWithM_)
 import Data.Maybe (isNothing)
+import System.FilePath ((</>))
 
 -- | Wraps 'Lusp.Eval.eval'' for creating a stack trace
 eval :: Env -> LispVal -> IO LispVal
@@ -64,7 +66,8 @@ eval' env (List [Atom "quasiquote", List xs]) =
             _                                 ->
               List [Atom "list", List [Atom "quote", x]]
 eval' env (List [Atom "load", String filename]) =
-    parse <$> readFile filename >>= mapM_ (eval env) >> return Void
+    getVar env "source-dir-path" >>= \dir ->
+    parse <$> readFile (extractStr dir </> filename) >>= mapM_ (eval env) >> return Void
 eval' env (List [Atom "if", predicate, consequnce, alternative]) =
     eval env predicate >>= \res ->
        case res of

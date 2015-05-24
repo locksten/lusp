@@ -31,6 +31,7 @@ initialEnv :: String
 initialEnv path args = primitiveEnv >>= \e -> bindMetaVars e path args
 
 -- | Filters out unprintable values
+filterUnprintable :: Functor f => f [LispVal] -> f [LispVal]
 filterUnprintable xs = filter predicate <$> xs
   where predicate x = not (isVoid x
                         || isPrimitiveFunc x

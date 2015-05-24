@@ -49,6 +49,7 @@ main = do
       \-r              start the repl\n\
       \-e \"expr\"       evaluate an expression\n\
       \-p \"expr\"       parse an expression\n\
+      \-v --version    print the version and exit\n\
       \-h --help       print help and exit" >> exitSuccess
 
 showParse :: String -> IO ()
@@ -74,4 +75,4 @@ repl env = do
                         catch (showEval env line) care
                         repl env
   where care :: LispError -> IO ()
-        care e = print e
+        care = print

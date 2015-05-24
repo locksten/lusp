@@ -66,6 +66,7 @@ import Lusp.Parser (parse)
 import Prelude hiding (read
                       ,map
                       ,compare)
+import qualified Prelude as P (compare)
 
 import Control.Exception (throw
                          ,catch)
@@ -78,7 +79,8 @@ import Data.Char (isSpace
                  ,digitToInt
                  ,intToDigit)
 import Data.List (transpose
-                 ,sort)
+                 ,sort
+                 ,sortBy)
 import System.IO (IOMode(ReadMode
                         ,WriteMode)
                  ,Handle
@@ -183,7 +185,7 @@ primitives =
     ,("car"   ,singleArg car)
     ,("cdr"   ,singleArg cdr)]
   where strToLChars   = fmap Char . LVU.extractStr
-        ciStrToLChars = fmap Char . fmap ci . LVU.extractStr
+        ciStrToLChars = fmap (Char . ci) . LVU.extractStr
         eC = LVU.extractChar
         ci = toLower
 
@@ -236,7 +238,7 @@ nonDecreasing :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
 nonDecreasing ex as = (ex <$> as) == sort (ex <$> as)
 
 nonIncreasing :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
-nonIncreasing ex as = (ex <$> as) == (reverse . sort) (ex <$> as)
+nonIncreasing ex as = (ex <$> as) == sortBy (flip P.compare) (ex <$> as)
 
 equal :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
 equal ex as = (ex <$> as) == reverse (ex <$> as)
@@ -248,8 +250,8 @@ decreasing :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
 decreasing ex as = nonIncreasing ex as && elemsUnique ex as
 
 elemsUnique :: Ord a => (LispVal -> a) -> [LispVal] -> Bool
-elemsUnique ex [a, b]   = not (ex a == ex b)
-elemsUnique ex (a:b:cs) = not (ex a == ex b) && elemsUnique ex (b:cs)
+elemsUnique ex [a, b]   = ex a /= ex b
+elemsUnique ex (a:b:cs) = (ex a /= ex b) && elemsUnique ex (b:cs)
 elemsUnique _ xs        = length xs < 2
 
 eqv :: LispVal -> LispVal -> Bool
@@ -391,10 +393,10 @@ display :: Handle -> LispVal -> IO ()
 display hdl = hPutStr hdl . LVU.prettyPrint
 
 errorCommand :: [LispVal] -> IO LispVal
-errorCommand [] = (throw $ ErrorCommand $ LVU.prettyPrint $ String "")
-    >> return Void
-errorCommand [msg] = (throw $ ErrorCommand $ LVU.prettyPrint msg) >> return Void
-errorCommand x = throw $ NumArgs "0 or 1" x
+errorCommand x = case x of []  -> err $ String ""
+                           [m] -> err m
+                           e   -> throw $ NumArgs "0 or 1" e
+  where err str = throw (ErrorCommand $ LVU.prettyPrint str) >> return Void
 
 writeChar :: Handle -> LispVal -> IO ()
 writeChar hdl (Char c) = hPutStr hdl [c]

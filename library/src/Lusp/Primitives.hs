@@ -64,6 +64,7 @@ import qualified Lusp.Numeric as N (equalElems
 import Lusp.Parser (parse)
 
 import Prelude hiding (read
+                      ,getLine
                       ,map
                       ,compare)
 import qualified Prelude as P (compare)
@@ -198,6 +199,7 @@ ioPrimitives = [("open-input-file"   ,makePort ReadMode)
                ,("input-port?"  ,ioPredicate isInputPort)
                ,("output-port?" ,ioPredicate isOutputPort)
                ,("read"         ,read)
+               ,("get-line"     ,input $ getLine)
                ,("read-char"    ,input $ inputChar hGetChar)
                ,("peek-char"    ,input $ inputChar hLookAhead)
                ,("char-ready?"  ,input charReady)
@@ -354,6 +356,9 @@ input op [Port port] = catch (op port) care
         care e = if isEOFError e then return EOF else throw e
 input _ [x]          = throw $ TypeMismatch "<IO port>" x
 input _ x            = throw $ NumArgs "0 or 1" x
+
+getLine :: Handle -> IO LispVal
+getLine hdl = String <$> (hGetLine hdl)
 
 read :: [LispVal] -> IO LispVal
 read []           = read [Port stdin]

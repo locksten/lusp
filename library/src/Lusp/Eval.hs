@@ -1,5 +1,6 @@
 module Lusp.Eval (eval
-                 ,apply) where
+                 ,apply
+                 ,load) where
 
 import Lusp.Environment (childEnv
                         ,getVar
@@ -34,7 +35,9 @@ import Control.Exception (throw
                          ,catch)
 import Control.Monad (zipWithM_)
 import Data.Maybe (isNothing)
-import System.FilePath ((</>))
+import System.Directory (findFile)
+import System.IO.Error (mkIOError
+                       ,doesNotExistErrorType)
 
 -- | Wraps 'Lusp.Eval.eval'' for creating a stack trace
 eval :: Env -> LispVal -> IO LispVal
@@ -66,8 +69,7 @@ eval' env (List [Atom "quasiquote", List xs]) =
             _                                 ->
               List [Atom "list", List [Atom "quote", x]]
 eval' env (List [Atom "load", String filename]) =
-    getVar env "source-dir-path" >>= \dir ->
-    parse <$> readFile (extractStr dir </> filename) >>= mapM_ (eval env) >> return Void
+    load env filename >> return Void
 eval' env (List [Atom "if", predicate, consequnce, alternative]) =
     eval env predicate >>= \res ->
        case res of
@@ -178,3 +180,12 @@ makeNormalFunc = makeFunc Nothing
 
 makeVarArgFunc :: LispVal -> Env -> [LispVal] -> [LispVal] -> IO LispVal
 makeVarArgFunc = makeFunc . Just . show
+
+load :: Env -> FilePath -> IO ()
+load env filename =
+    list <$> getVar env "import-paths" >>= flip findFile filename >>= \found ->
+      case found of
+        Nothing -> throw $
+          mkIOError doesNotExistErrorType "" Nothing (Just filename)
+        Just x  -> parse <$> readFile x >>= mapM_ (eval env) >> return ()
+  where list = fmap extractStr . extractList

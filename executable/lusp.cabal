@@ -14,7 +14,8 @@ cabal-version:         >= 1.10
 
 executable scheme
   main-is:             Main.hs
--- other-modules:
+  other-modules:       Paths
+                      ,Repl
 -- other-extensions:
   build-depends:       base == 4.8.*
                       ,lusp-lib == 0.1.*

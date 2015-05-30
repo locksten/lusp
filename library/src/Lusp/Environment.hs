@@ -5,6 +5,7 @@ module Lusp.Environment (emptyEnv
                         ,defineVar
                         ,bindVars
                         ,isBound
+                        ,getAllVarNames
                         ,bindMetaVars) where
 
 import Lusp.LispError (LispError(UnboundVar))
@@ -21,9 +22,6 @@ import qualified Data.Map.Strict as Map (member
                                         ,insert
                                         ,fromList
                                         ,toList)
-import System.FilePath (takeDirectory
-                       ,normalise
-                       ,addTrailingPathSeparator)
 
 -- | Create an empty environment
 emptyEnv :: IO Env
@@ -98,13 +96,19 @@ bindVars (Env(parent, env)) bindings = readIORef env >>= doExtend >>=
         toFullEnv x = Env (parent, x)
 
 bindMetaVars :: Env
-             -> String
-             -- ^ Path to the source code file
+             -> [FilePath]
+             -- ^ List of directories to look for source files in
              -> [String]
              -- ^ Command line arguments
              -> IO Env
-bindMetaVars env path args =
-    bindVars env [("source-file-path", String path)
-                 ,("source-dir-path", String
-                  (addTrailingPathSeparator $ normalise $ takeDirectory path))
+bindMetaVars env importPaths args =
+    bindVars env [("import-paths", List $ String <$> importPaths)
                  ,("command-line", List $ String <$> args)]
+
+-- | Returns a list of the names of all of the variables in the environment
+getAllVarNames :: Env -> IO [String]
+getAllVarNames (Env(parent, env)) = ((++) <$> parentOrEmpty) <*>
+    (fmap fst . Map.toList <$> readIORef env)
+  where parentOrEmpty = case parent of
+            Nothing -> return []
+            Just p  -> getAllVarNames p

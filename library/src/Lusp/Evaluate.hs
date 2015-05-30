@@ -1,8 +1,11 @@
 module Lusp.Evaluate (evaluate
-                     ,initialEnv) where
+                     ,initialEnv
+                     ,autoCompleteTokens) where
 
-import Lusp.Environment (bindMetaVars)
-import Lusp.Eval (eval)
+import Lusp.Environment (bindMetaVars
+                        ,getAllVarNames)
+import Lusp.Eval (eval
+                 ,load)
 import Lusp.LispVal (LispVal
                     ,Env)
 import Lusp.LispValUtils (isVoid
@@ -23,12 +26,21 @@ evaluate :: Env
 evaluate env vals = filterUnprintable $ forM vals (eval env)
 
 -- | Returns an environment containing prmitives and meta information
-initialEnv :: String
-           -- ^ Path to the source code file
+initialEnv :: [String]
+           -- ^ List of directories to look for source files in
            -> [String]
            -- ^ Command line arguments
            -> IO Env
-initialEnv path args = primitiveEnv >>= \e -> bindMetaVars e path args
+initialEnv importPaths args = do
+    env <- primitiveEnv
+    e <- bindMetaVars env importPaths args
+    load e "stdlib.scm"
+    return e
+
+-- | Extracts a list of tokens for autocompletion from the environment
+autoCompleteTokens :: Env -> IO [String]
+autoCompleteTokens = getAllVarNames
+
 
 -- | Filters out unprintable values
 filterUnprintable :: Functor f => f [LispVal] -> f [LispVal]

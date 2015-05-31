@@ -1,5 +1,6 @@
 module Lusp.Evaluate (evaluate
                      ,initialEnv
+                     ,stdlibInstallDir
                      ,autoCompleteTokens) where
 
 import Lusp.Environment (bindMetaVars
@@ -16,6 +17,8 @@ import Lusp.LispValUtils (isVoid
 import Lusp.Primitives (primitiveEnv)
 
 import Control.Monad (forM)
+import Paths_lusp_lib (getDataFileName)
+import System.FilePath (takeDirectory)
 
 -- | Evaluates a list of expressions in the given environment
 evaluate :: Env
@@ -41,6 +44,9 @@ initialEnv importPaths args = do
 autoCompleteTokens :: Env -> IO [String]
 autoCompleteTokens = getAllVarNames
 
+-- | Returns the directory in which stdlib.scm is installed
+stdlibInstallDir :: IO FilePath
+stdlibInstallDir = takeDirectory <$> getDataFileName "stdlib.scm"
 
 -- | Filters out unprintable values
 filterUnprintable :: Functor f => f [LispVal] -> f [LispVal]

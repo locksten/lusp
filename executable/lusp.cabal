@@ -16,6 +16,7 @@ executable lusp
   main-is:             Main.hs
   other-modules:       Paths
                       ,Repl
+                      ,Paths_lusp
 -- other-extensions:
   build-depends:       base == 4.8.*
                       ,lusp-lib == 0.1.*

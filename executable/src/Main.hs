@@ -19,8 +19,8 @@ import System.Exit (exitFailure
 main :: IO ()
 main = do
     opt <- safeArg 0
-    let initEnv = getCurrentDirectory >>= \d ->
-                  initialEnv (d : Paths.importDirs) [addTrailingPathSeparator d]
+    cwd <- addTrailingPathSeparator <$> getCurrentDirectory
+    let initEnv = Paths.importDirs >>= \i -> initialEnv (cwd : i) [cwd]
     case opt of
       "-r"        -> initEnv >>= repl
       "-p"        -> safeArg 1 >>= showParse
@@ -33,11 +33,10 @@ main = do
         if exists then do
                   str <- readFile file
                   args <- getArgs
-                  cwd <- addTrailingPathSeparator <$> getCurrentDirectory
                   let fileDir = addTrailingPathSeparator $ normalise $
                                 takeDirectory file
-                  env <- initialEnv (fileDir : Paths.importDirs)
-                     (cwd : tailOrEmpty args)
+                  env <- Paths.importDirs >>= \i ->
+                    initialEnv (fileDir : i) (cwd : tailOrEmpty args)
                   execute env str
                   else putStrLn ("The file \"" ++ file ++ "\" does not exist")
                        >> exitFailure

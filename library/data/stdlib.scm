@@ -448,3 +448,48 @@
 ; (newline)
 ; (displayn
 ;   (split-string-on "abc def ghi" char-whitespace?))
+
+
+; (define-macro export
+;     (lambda (. xs)
+;       `(set! ,@xs)))
+
+; (define-macro module
+;     (lambda (declarations . body)
+;       (append
+;         (cons 'begin
+;               (map (lambda (x) (list 'define x 'void)) declarations))
+;         (list `(let () ,@body)))
+;       ))
+
+
+(define-macro export
+    (lambda (. xs)
+      `(set! ,@xs)))
+
+(define-macro module
+    (lambda (declarations . body)
+      (append
+        (cons 'begin
+              (map
+                (lambda (x) (list 'define x 'void))
+                declarations))
+        (list `(let () ,@body)))))
+
+; ;; Example
+; (module
+;   (pow-4
+;    pow-16)
+
+; (define (helper-func x)
+;   (* x x))
+
+; (define (four x)
+;   (helper-func (helper-func x)))
+
+; (define (sixteen x)
+;   (four (four x)))
+
+; (export pow-4 four)
+; (export pow-16 sixteen)
+; )

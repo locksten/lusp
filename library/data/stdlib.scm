@@ -106,15 +106,15 @@
     '() lst))
 
 (define (reverse lst)
-  (fold (flip cons) '() lst))
+  (foldl (flip cons) '() lst))
 
 (define (max first . rest)
-  (fold (lambda (old new)
+  (foldl (lambda (old new)
           (if (> old new) old new))
         first rest))
 
 (define (min first . rest)
-  (fold (lambda (old new)
+  (foldl (lambda (old new)
           (if (< old new) old new))
         first rest))
 

@@ -9,7 +9,7 @@
                   (let ((line '()))
                     (for 0 width (lambda (x)
                                    (set! line (cons (f x y) line))))
-                    (display (list->string line)))
+                    (display (list->string (reverse line))))
                   (newline))))
 
 (define (display-gradient gradient width height f)

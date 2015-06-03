@@ -30,7 +30,7 @@ showEval env = (print' =<<) . evaluate env . parse
 
 -- | Starts the repl
 repl :: Env -> IO ()
-repl env = readHistory >> replStep env
+repl env = (Paths.replHistory >>= createFile) >> readHistory >> replStep env
 
 -- | Reads Evaluates Prints Loops
 replStep :: Env -> IO ()
@@ -59,9 +59,7 @@ readHistory = sequence_ . fmap addHistory . lines =<<
 saveHistory :: String -> IO ()
 saveHistory l = do
     addHistory l
-    historyPath <- Paths.replHistory
-    createFile historyPath
-    appendFile historyPath (l ++ "\n")
+    Paths.replHistory >>= flip appendFile (l ++ "\n")
 
 -- | Creates an empty file if it does not yet exist
 createFile :: FilePath -> IO ()

@@ -199,7 +199,7 @@ ioPrimitives = [("open-input-file"   ,makePort ReadMode)
                ,("input-port?"  ,ioPredicate isInputPort)
                ,("output-port?" ,ioPredicate isOutputPort)
                ,("read"         ,read)
-               ,("get-line"     ,input $ getLine)
+               ,("get-line"     ,input getLine)
                ,("read-char"    ,input $ inputChar hGetChar)
                ,("peek-char"    ,input $ inputChar hLookAhead)
                ,("char-ready?"  ,input charReady)
@@ -358,7 +358,7 @@ input _ [x]          = throw $ TypeMismatch "<IO port>" x
 input _ x            = throw $ NumArgs "0 or 1" x
 
 getLine :: Handle -> IO LispVal
-getLine hdl = String <$> (hGetLine hdl)
+getLine hdl = String <$> hGetLine hdl
 
 read :: [LispVal] -> IO LispVal
 read []           = read [Port stdin]

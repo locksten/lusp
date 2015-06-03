@@ -8,6 +8,7 @@ import Repl (repl
 
 import Control.Monad (when)
 import Data.List (find)
+import Data.Maybe (fromMaybe)
 import Data.Version (showVersion)
 import System.FilePath (takeDirectory
                        ,normalise
@@ -23,11 +24,8 @@ main :: IO ()
 main = do
     -- Run the repl if no arguments are provided
     null <$> getArgs >>= flip when (cwdEnv >>= repl >> exitSuccess)
-    opt <- safeArg 0
-    case findOption opt of
-      -- If the argument is not an option, treat it as a filename
-      Nothing -> executeFile opt
-      Just f  -> f
+    -- If the argument is not an option, treat it as a filename
+    safeArg 0 >>= \arg -> fromMaybe (executeFile arg) (findOption arg)
 
 -- | Executes the code contained within the file
 executeFile :: FilePath -> IO ()

@@ -1,15 +1,12 @@
 name:                  lusp
-version:               0.1.0.0
-synopsis:              Front-end for lusp-lib
--- description:
+version:               1.0.0.0
+synopsis:              Terminal front-end for lusp-lib
 license:               MIT
 license-file:          LICENSE
 author:                locksten
 maintainer:            locksten@users.noreply.github.com
--- copyright:
--- category:
+homepage:              https://github.com/locksten/lusp
 build-type:            Simple
--- extra-source-files:
 cabal-version:         >= 1.10
 
 executable lusp
@@ -17,7 +14,6 @@ executable lusp
   other-modules:       Paths
                       ,Repl
                       ,Paths_lusp
--- other-extensions:
   build-depends:       base == 4.8.*
                       ,lusp-lib == 0.1.*
                       ,directory == 1.2.*

@@ -187,35 +187,6 @@
                 (if (> index end) void
                   (begin (func index) (for (+ index 1) end func))))))
 
-;; iterative fibonacci
-(define (fib n)
-  (let ((curr 1) (last 0))
-    (for 0 n
-         (lambda (x)
-           (define tmp curr)
-           (set! curr (+ last curr))
-           (set! last tmp)))
-    curr))
-
-;; Example
-; (newline)
-; (display "fibonacci-iter 0..9: ")
-; (for 0 9 (lambda (x) (begin (display (fib x))
-;                             (display #\ ))))
-
-;; recursive fibonacci
-(define (fib-rec i)
-  (if (zero? i) 0
-    (if (= i 1) 1
-      (+ (fib-rec (- i 1))
-         (fib-rec (- i 2))))))
-
-;; Example
-; (newline)
-; (display "fibonacci-rec 0..9: ")
-; (for 0 9 (lambda (x) (begin (display (fib-rec x))
-;                              (display #\ ))))
-
 ;; factorial
 (define (factorial i)
   (if (zero? i) 1

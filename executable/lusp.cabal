@@ -15,7 +15,7 @@ executable lusp
                       ,Repl
                       ,Paths_lusp
   build-depends:       base == 4.8.*
-                      ,lusp-lib == 0.1.*
+                      ,lusp-lib == 1.0.*
                       ,directory == 1.2.*
                       ,readline == 1.0.*
                       ,filepath == 1.4.*
